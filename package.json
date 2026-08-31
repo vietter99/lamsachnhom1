@@ -1,0 +1,14 @@
+{
+  "name": "mplis-lamsach-tool",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Tampermonkey userscript làm sạch dữ liệu nhóm 1 trên MPLIS/VBDLIS: tra cứu hàng loạt, gắn giấy chứng nhận cho hồ sơ quét, tải file chưa ký số, gửi phân loại lại, ghi kết quả vào Google Sheet.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node preview.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}

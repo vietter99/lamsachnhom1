@@ -1,0 +1,14 @@
+node_modules/
+dist/
+skills/
+
+# Bắt buộc: các file dưới đây chứa token phiên đăng nhập và dữ liệu công dân.
+# Không bao giờ commit chúng.
+file chi tiết*
+*.har
+*.log
+network-*.txt
+ket-qua-*.csv
+ho-so-quet-*.zip
+
+preview/

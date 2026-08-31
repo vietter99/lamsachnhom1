@@ -1,0 +1,16 @@
+// ==UserScript==
+// @name         MPLIS Làm Sạch Nhóm 1
+// @namespace    http://tampermonkey.net/
+// @version      1.1.0
+// @description  Tra cứu hàng loạt số phát hành giấy chứng nhận, phân loại lý do chưa đáp ứng nhóm 1, tải file quét chưa ký số, gắn giấy chứng nhận, gửi phân loại lại, ghi kết quả vào Google Sheet.
+// @author       Việt
+// @match        *://*.mplis.gov.vn/*
+// @match        *://*.vbdlis.vn/*
+// @noframes
+// @grant        GM_addStyle
+// @grant        GM_setClipboard
+// @grant        GM_xmlhttpRequest
+// @connect      script.google.com
+// @connect      script.googleusercontent.com
+// @run-at       document-end
+// ==/UserScript==
