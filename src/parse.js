@@ -63,21 +63,29 @@ export function tachGiayChungNhanKey(key) {
 
 /** Gom một bản ghi trong data[] của API tra cứu thành dòng kết quả phẳng. */
 /**
- * Modal "Cập nhật dữ liệu thiếu" của MPLIS có 2 ô riêng cho cùng một cá nhân:
+ * Modal "Cập nhật dữ liệu thiếu" của MPLIS có các ô riêng cho cùng một cá nhân:
  *
- *   CANHAN.15517072_0|maSoDinhDanh                       "Mã số định danh"
- *   CANHAN.15517072_0|GIAYTOTUYTHAN.7477731|soGiayTo      "Số giấy tờ"
+ *   CANHAN.15517072_0|maSoDinhDanh                        "Mã số định danh"
+ *   CANHAN.15517072_0|GIAYTOTUYTHAN.7477731|soGiayTo       "Số giấy tờ"
+ *   HOGIADINH.1723401_0|DIACHI|null                        "Địa chỉ"
  *
- * Hai ô này thường phải cùng một số CCCD/CMND, nhưng dữ liệu có thể lệch: một
- * ô đã có số (nhập nơi khác), ô kia trống. Quét khắp cây bản ghi tìm mọi node
- * mang đúng `caNhanId` này, gom mọi giá trị {maSoDinhDanh, soGiayTo,
- * maDinhDanhCaNhan} khác rỗng — có sẵn thì dùng luôn, khỏi cần tra một cửa.
+ * Các ô này thường trùng với dữ liệu đã có sẵn nơi khác trong hồ sơ, nhưng có
+ * thể lệch: một ô có, ô kia trống. Quét khắp cây bản ghi tìm mọi node mang
+ * đúng `caNhanId` này, gom mọi giá trị {maSoDinhDanh, soGiayTo,
+ * maDinhDanhCaNhan, diaChi, diaChiChiTiet} khác rỗng — có sẵn thì dùng luôn,
+ * khỏi cần tra một cửa.
+ *
+ * Giấy chứng nhận đứng tên vợ chồng (2 chủ) thì máy chủ nối 2 giá trị bằng
+ * " - " ở field tóm tắt (`ChuSoHuu[].soGiayTo`), nhưng ở đây tìm thẳng theo
+ * `caNhanId` của đúng người đang thiếu — không tách chuỗi theo vị trí, nên
+ * không có rủi ro lấy nhầm sang người kia.
  */
 export function timGiaTriDinhDanhTheoCaNhan(record, caNhanId) {
     const idSach = String(caNhanId ?? '').split('_')[0];
-    if (!idSach) return [];
+    if (!idSach) return { so: [], diaChi: [] };
 
-    const ketQua = new Set();
+    const so = new Set();
+    const diaChi = new Set();
     const daTham = new Set();
     const duyet = (node) => {
         if (!node || typeof node !== 'object' || daTham.has(node)) return;
@@ -89,13 +97,17 @@ export function timGiaTriDinhDanhTheoCaNhan(record, caNhanId) {
         if (String(node.caNhanId ?? '') === idSach) {
             for (const khoa of ['maSoDinhDanh', 'soGiayTo', 'maDinhDanhCaNhan']) {
                 const gt = node[khoa];
-                if (gt) ketQua.add(String(gt).trim());
+                if (gt) so.add(String(gt).trim());
+            }
+            for (const khoa of ['diaChiChiTiet', 'diaChi']) {
+                const dc = node[khoa];
+                if (dc) diaChi.add(String(dc).trim());
             }
         }
         Object.values(node).forEach(duyet);
     };
     duyet(record);
-    return Array.from(ketQua);
+    return { so: Array.from(so), diaChi: Array.from(diaChi) };
 }
 
 export function bocKetQuaTraCuu(soPhatHanh, record) {
@@ -104,12 +116,14 @@ export function bocKetQuaTraCuu(soPhatHanh, record) {
         .filter(Boolean);
 
     // Hồ sơ nào thiếu mã định danh (mã lỗi maSoDinhDanh) thì tìm luôn xem chính
-    // bản ghi này đã có sẵn số ở ô kia chưa — có thì "Tìm mã định danh" dùng
-    // ngay, không cần gọi một cửa.
+    // bản ghi này đã có sẵn số và địa chỉ ở ô khác chưa — có thì "Tìm mã định
+    // danh" dùng ngay, không cần gọi một cửa.
+    const caNhanThieu = maLois.filter((m) => m.maLoi === 'maSoDinhDanh' && m.thucThe.CANHAN);
     const dinhDanhCoSanTuHoSo = Array.from(new Set(
-        maLois
-            .filter((m) => m.maLoi === 'maSoDinhDanh' && m.thucThe.CANHAN)
-            .flatMap((m) => timGiaTriDinhDanhTheoCaNhan(record, m.thucThe.CANHAN))
+        caNhanThieu.flatMap((m) => timGiaTriDinhDanhTheoCaNhan(record, m.thucThe.CANHAN).so)
+    ));
+    const diaChiCoSanTuHoSo = Array.from(new Set(
+        caNhanThieu.flatMap((m) => timGiaTriDinhDanhTheoCaNhan(record, m.thucThe.CANHAN).diaChi)
     ));
 
     return {
@@ -131,6 +145,7 @@ export function bocKetQuaTraCuu(soPhatHanh, record) {
         canhBao: (record.warningMessages || []).join(' | '),
         capNhatLuc: formatNetDate(record.lastTimeUpdated),
         dinhDanhCoSanTuHoSo,
+        diaChiCoSanTuHoSo,
     };
 }
 

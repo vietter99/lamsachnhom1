@@ -153,6 +153,25 @@ export const PANEL_CSS = `
     cursor: pointer;
 }
 #mls-panel .mls-madinhdanh-copy:hover { background: var(--mls-bg-subtle); }
+#mls-panel .mls-madinhdanh-diachi {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px dashed var(--mls-divider);
+}
+#mls-panel .mls-madinhdanh-diachi code { font-weight: 400; white-space: normal; }
+
+#mls-panel .mls-thua-to {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 10.5px;
+    color: var(--mls-fg-muted);
+}
+#mls-panel .mls-thua-to b { color: var(--mls-fg); font-weight: 700; }
 
 #mls-panel :focus-visible {
     outline: 2px solid var(--mls-ring);
@@ -634,12 +653,13 @@ export const PANEL_CSS = `
    phần rộng còn lại. table-layout: fixed chặn hẳn kiểu tự-co bất thường mà
    auto layout có thể tạo ra khi một ô có nội dung không có bề rộng tự nhiên
    rõ ràng (như hộp -webkit-line-clamp). */
-#mls-panel th:nth-child(1), #mls-panel td:nth-child(1) { width: 10%; }
-#mls-panel th:nth-child(2), #mls-panel td:nth-child(2) { width: 18%; }
-#mls-panel th:nth-child(3), #mls-panel td:nth-child(3) { width: 26%; }
-#mls-panel th:nth-child(4), #mls-panel td:nth-child(4) { width: 22%; }
-#mls-panel th:nth-child(5), #mls-panel td:nth-child(5) { width: 12%; }
-#mls-panel th:nth-child(6), #mls-panel td:nth-child(6) { width: 12%; }
+#mls-panel th:nth-child(1), #mls-panel td:nth-child(1) { width: 9%; }
+#mls-panel th:nth-child(2), #mls-panel td:nth-child(2) { width: 11%; }
+#mls-panel th:nth-child(3), #mls-panel td:nth-child(3) { width: 16%; }
+#mls-panel th:nth-child(4), #mls-panel td:nth-child(4) { width: 24%; }
+#mls-panel th:nth-child(5), #mls-panel td:nth-child(5) { width: 20%; }
+#mls-panel th:nth-child(6), #mls-panel td:nth-child(6) { width: 10%; }
+#mls-panel th:nth-child(7), #mls-panel td:nth-child(7) { width: 10%; }
 #mls-panel th {
     position: sticky;
     top: 0;
@@ -650,11 +670,12 @@ export const PANEL_CSS = `
 }
 #mls-panel tbody tr:last-child td { border-bottom: 0; }
 #mls-panel td.mls-badge-cell { white-space: nowrap; }
-/* Cột Trạng thái dùng chung class mls-badge-cell với Chữ ký/Sheet, nhưng chữ
-   dài hơn hẳn ("Chưa đạt nhóm 1", "Không tìm thấy"). Giữ nowrap chung cho cả
-   nhóm từng khiến badge Trạng thái tràn ngang, đè lên chữ cột Báo lỗi kế bên
-   — trả nó về ngắt dòng bình thường. */
-#mls-panel td:nth-child(2).mls-badge-cell { white-space: normal; }
+/* Cột Trạng thái (thứ 3: Số phát hành, Thửa/Tờ, Trạng thái...) dùng chung
+   class mls-badge-cell với Chữ ký/Sheet, nhưng chữ dài hơn hẳn ("Chưa đạt
+   nhóm 1", "Không tìm thấy"). Giữ nowrap chung cho cả nhóm từng khiến badge
+   Trạng thái tràn ngang, đè lên chữ cột Báo lỗi kế bên — trả nó về ngắt dòng
+   bình thường. */
+#mls-panel td:nth-child(3).mls-badge-cell { white-space: normal; }
 #mls-panel .mls-badge {
     display: inline-block;
     padding: 1px 7px;

@@ -931,6 +931,17 @@ function veBang() {
                 const ten = bocTenChu(r.thongTinChu);
                 const oTen = ten ? `<div class="mls-madinhdanh-ten">${escapeHtml(ten)}</div>` : '';
 
+                // Địa chỉ tách riêng khỏi mã định danh — hồ sơ có thể có sẵn cái
+                // này mà thiếu cái kia. Cùng nút Copy để dán vào ô "Địa chỉ" của
+                // modal MPLIS, độc lập với việc mã định danh đã tìm được chưa.
+                const oDiaChi = r.diaChiTimDuoc
+                    ? `<div class="mls-madinhdanh-diachi">
+                        <code>${escapeHtml(r.diaChiTimDuoc)}</code>
+                        <button type="button" class="mls-madinhdanh-copy" data-soph="${escapeHtml(r.soPhatHanh)}" data-truong="diaChi"
+                            title="Copy địa chỉ để dán vào ô Địa chỉ trên MPLIS">Copy</button>
+                    </div>`
+                    : '';
+
                 if (r.maDinhDanhTimDuoc) {
                     // Ra nhiều số cùng tên thì cho chọn ngay tại đây bằng ô thả
                     // xuống, thay vì chỉ ghi chú "còn số khác" rồi bắt tự đối
@@ -949,21 +960,32 @@ function veBang() {
                     // không tự điền vào modal đó vì modal chỉ tồn tại khi người
                     // dùng tự mở, và mỗi hồ sơ một modal riêng.
                     const nguon = r.maDinhDanhNguon === 'ho-so' ? 'có sẵn trong hồ sơ' : 'tra một cửa';
-                    const oCopy = `<button type="button" class="mls-madinhdanh-copy" data-soph="${escapeHtml(r.soPhatHanh)}"
+                    const oCopy = `<button type="button" class="mls-madinhdanh-copy" data-soph="${escapeHtml(r.soPhatHanh)}" data-truong="soGiayTo"
                         title="Copy số đang chọn (${escapeHtml(nguon)}) để dán vào Mã số định danh / Số giấy tờ trên MPLIS">Copy</button>`;
-                    oMaDinhDanh = `<div class="mls-madinhdanh">${oTen}${oChon}${oCopy}</div>`;
+                    oMaDinhDanh = `<div class="mls-madinhdanh">${oTen}${oChon}${oCopy}</div>${oDiaChi}`;
                 } else {
                     // Chưa bấm "Tìm mã định danh" thì báo rõ ngay tại đây, thay
                     // vì chỉ hiện tên chủ rồi im. Badge giữ ngắn như mọi badge
                     // khác trong bảng (Chưa ký, chưa ghi...) — câu dài đẩy vào
                     // title, tránh vỡ dòng xấu trong cột hẹp.
                     oMaDinhDanh = `<div class="mls-madinhdanh">${oTen}` +
-                        `<span class="mls-badge warn" title="Bấm nút Tìm mã định danh ở mục 4 để tra">Thiếu</span></div>`;
+                        `<span class="mls-badge warn" title="Bấm nút Tìm mã định danh ở mục 4 để tra">Thiếu</span></div>${oDiaChi}`;
                 }
             }
 
+            // Một giấy chứng nhận phủ nhiều thửa, mỗi thửa một dòng riêng với
+            // trạng thái nhóm 1 riêng — không có cột này thì không biết đúng
+            // dòng "Chưa đạt" hay "Đạt" đang nói về thửa/tờ nào.
+            const oThuaTo = r.soThuTuThua || r.soHieuToBanDo
+                ? `<div class="mls-thua-to">
+                    ${r.soThuTuThua ? `<span>Thửa <b>${escapeHtml(String(r.soThuTuThua))}</b></span>` : ''}
+                    ${r.soHieuToBanDo ? `<span>Tờ <b>${escapeHtml(String(r.soHieuToBanDo))}</b></span>` : ''}
+                </div>`
+                : '<span aria-hidden="true">—</span><span class="mls-sr">không có</span>';
+
             return `<tr>
                 <td>${escapeHtml(r.soPhatHanh)}</td>
+                <td>${oThuaTo}</td>
                 <td class="mls-badge-cell"><span class="mls-badge ${cls}">${escapeHtml(r.trangThai)}</span></td>
                 <td>${baoLoi}</td>
                 <td>${oMaDinhDanh}</td>
@@ -979,6 +1001,7 @@ function veBang() {
             <thead>
                 <tr>
                     <th scope="col">Số phát hành</th>
+                    <th scope="col">Thửa/Tờ</th>
                     <th scope="col">Trạng thái</th>
                     <th scope="col">Báo lỗi</th>
                     <th scope="col">Mã định danh</th>
@@ -1014,18 +1037,22 @@ function veBang() {
             log(`Đổi mã định danh ${row.soPhatHanh}: ${soCu} → ${soMoi}`);
         });
 
-        // Copy số đang chọn — người dùng tự dán vào ô "Mã số định danh" hoặc
-        // "Số giấy tờ" trên modal MPLIS, ô nào thiếu thì dán ô đó.
+        // Copy số hoặc địa chỉ đang chọn — người dùng tự dán vào đúng ô trên
+        // modal MPLIS. `data-truong` phân biệt copy số (dán vào Mã số định
+        // danh / Số giấy tờ) hay copy địa chỉ (dán vào ô Địa chỉ).
         host.addEventListener('click', (e) => {
             const nut = e.target.closest('.mls-madinhdanh-copy');
             if (!nut) return;
             const row = ketQua.find((r) => r.soPhatHanh === nut.dataset.soph);
-            const so = row?.maDinhDanhTimDuoc;
-            if (!so) return;
+            const laDiaChi = nut.dataset.truong === 'diaChi';
+            const gt = laDiaChi ? row?.diaChiTimDuoc : row?.maDinhDanhTimDuoc;
+            if (!gt) return;
 
             if (typeof GM_setClipboard === 'function') {
-                GM_setClipboard(so);
-                datTrangThai(`Đã copy ${so} — dán vào Mã số định danh hoặc Số giấy tờ trên MPLIS.`);
+                GM_setClipboard(gt);
+                datTrangThai(laDiaChi
+                    ? `Đã copy địa chỉ — dán vào ô Địa chỉ trên MPLIS.`
+                    : `Đã copy ${gt} — dán vào Mã số định danh hoặc Số giấy tờ trên MPLIS.`);
             } else {
                 datTrangThai('Userscript thiếu quyền GM_setClipboard. Dán lại bản build mới nhất.');
             }
@@ -1129,6 +1156,13 @@ async function timMaDinhDanhHangLoat() {
         if (yeuCauDung) break;
         const ten = bocTenChu(row.thongTinChu);
         datTrangThai(`Tìm mã định danh ${daXong + 1}/${canTim.length}: ${ten || row.soPhatHanh}`, true);
+
+        // Địa chỉ tách riêng khỏi mã định danh: hồ sơ có thể đã có sẵn địa chỉ
+        // dù đang thiếu mã định danh, hoặc ngược lại. Ghi nhận độc lập, đúng
+        // theo caNhanId đang thiếu — không lẫn sang người đồng sở hữu kia.
+        if (row.diaChiCoSanTuHoSo && row.diaChiCoSanTuHoSo.length) {
+            row.diaChiTimDuoc = row.diaChiCoSanTuHoSo[0];
+        }
 
         // Chính hồ sơ đã có sẵn số ở ô "Mã số định danh" hoặc "Số giấy tờ" (một
         // ô có, ô kia thiếu) thì dùng luôn — khỏi tốn lượt gọi một cửa, và độ

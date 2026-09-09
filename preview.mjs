@@ -34,17 +34,21 @@ function thayBien(markup) {
 }
 
 const DONG_MAU = [
-    { so: 'DL 242877', trangThai: 'Chưa đạt nhóm 1', muc: 'warn', loi: 'Tình hình đăng ký 13610685 có giấy chứng nhận 2304884_1 có hồ sơ quét chưa ký số', md: null, ky: ['err', 'Chưa ký'], sheet: ['ok', 'đã ghi'] },
-    { so: 'CH 655063', trangThai: 'Chưa đạt nhóm 1', muc: 'warn', loi: 'Tình hình đăng ký 13610646 có giấy chứng nhận 2292635_3 có hồ sơ quét chưa liên kết giấy chứng nhận', md: null, ky: ['err', 'Chưa ký'], sheet: ['ok', 'đã ghi'] },
-    { so: 'K 550768', trangThai: 'Đạt nhóm 1', muc: 'ok', loi: '', md: null, ky: ['ok', 'Đã ký'], sheet: ['ok', 'đã ghi'] },
-    { so: 'AC 491772', trangThai: 'Chưa đạt nhóm 1', muc: 'warn', loi: 'Tình hình đăng ký 13609970 có hộ gia đình 1723401_0 có cá nhân 15517072_0 không có mã định danh cá nhân', md: { ten: 'Hoàng Minh Bính', so: ['042064006947', '042064006974'] }, ky: ['err', 'Chưa ký'], sheet: ['warn', 'chưa ghi'] },
-    { so: 'DL 243100', trangThai: 'Không tìm thấy', muc: 'err', loi: '', md: null, ky: null, sheet: ['warn', 'chưa ghi'] },
-    { so: 'DL 243155', trangThai: 'Lỗi tra cứu', muc: 'err', loi: 'HTTP 500 Internal Server Error tại /LamSachDuLieuAjax/GetThongKePhanLoaiThuaDatChiTiet', md: null, ky: null, sheet: ['err', 'lỗi'] },
+    { so: 'DL 242877', thua: '170', to: '241', trangThai: 'Chưa đạt nhóm 1', muc: 'warn', loi: 'Tình hình đăng ký 13610685 có giấy chứng nhận 2304884_1 có hồ sơ quét chưa ký số', md: null, dc: null, ky: ['err', 'Chưa ký'], sheet: ['ok', 'đã ghi'] },
+    { so: 'CH 655063', thua: '66', to: '241', trangThai: 'Chưa đạt nhóm 1', muc: 'warn', loi: 'Tình hình đăng ký 13610646 có giấy chứng nhận 2292635_3 có hồ sơ quét chưa liên kết giấy chứng nhận', md: null, dc: null, ky: ['err', 'Chưa ký'], sheet: ['ok', 'đã ghi'] },
+    { so: 'K 550768', thua: '14', to: '100099', trangThai: 'Đạt nhóm 1', muc: 'ok', loi: '', md: null, dc: null, ky: ['ok', 'Đã ký'], sheet: ['ok', 'đã ghi'] },
+    { so: 'AC 491772', thua: '2000133', to: '3100035', trangThai: 'Chưa đạt nhóm 1', muc: 'warn', loi: 'Tình hình đăng ký 13609970 có hộ gia đình 1723401_0 có cá nhân 15517072_0 không có mã định danh cá nhân', md: { ten: 'Hoàng Minh Bính', so: ['042064006947', '042064006974'] }, dc: 'Xã Ea Tóh, huyện Krông Năng, tỉnh Đắk Lắk', ky: ['err', 'Chưa ký'], sheet: ['warn', 'chưa ghi'] },
+    { so: 'DL 243100', thua: '', to: '', trangThai: 'Không tìm thấy', muc: 'err', loi: '', md: null, dc: null, ky: null, sheet: ['warn', 'chưa ghi'] },
+    { so: 'DL 243155', thua: '', to: '', trangThai: 'Lỗi tra cứu', muc: 'err', loi: 'HTTP 500 Internal Server Error tại /LamSachDuLieuAjax/GetThongKePhanLoaiThuaDatChiTiet', md: null, dc: null, ky: null, sheet: ['err', 'lỗi'] },
 ];
 
 const trong = '<span aria-hidden="true">—</span>';
 
 const hangBang = DONG_MAU.map((r) => {
+    const oThuaTo = r.thua || r.to
+        ? `<div class="mls-thua-to">${r.thua ? `<span>Thửa <b>${r.thua}</b></span>` : ''}${r.to ? `<span>Tờ <b>${r.to}</b></span>` : ''}</div>`
+        : trong;
+
     let oMaDinhDanh = trong;
     if (r.md) {
         const oTen = `<div class="mls-madinhdanh-ten">${r.md.ten}</div>`;
@@ -52,10 +56,14 @@ const hangBang = DONG_MAU.map((r) => {
             ? `<select class="mls-madinhdanh-chon">${r.md.so.map((s, i) => `<option ${i === 0 ? 'selected' : ''}>${s}</option>`).join('')}</select>
                 <span class="mls-hint">${r.md.so.length} số cùng tên, tự chọn đúng</span>`
             : `<code>${r.md.so[0]}</code>`;
-        oMaDinhDanh = `<div class="mls-madinhdanh">${oTen}${oChon}</div>`;
+        const oDiaChi = r.dc
+            ? `<div class="mls-madinhdanh-diachi"><code>${r.dc}</code><button type="button" class="mls-madinhdanh-copy">Copy</button></div>`
+            : '';
+        oMaDinhDanh = `<div class="mls-madinhdanh">${oTen}${oChon}</div>${oDiaChi}`;
     }
     return `<tr>
                 <td>${r.so}</td>
+                <td>${oThuaTo}</td>
                 <td class="mls-badge-cell"><span class="mls-badge ${r.muc}">${r.trangThai}</span></td>
                 <td>${r.loi || trong}</td>
                 <td>${oMaDinhDanh}</td>
@@ -69,6 +77,7 @@ const bangKetQua = `<div class="mls-table-wrap">
                 <thead>
                     <tr>
                         <th scope="col">Số phát hành</th>
+                        <th scope="col">Thửa/Tờ</th>
                         <th scope="col">Trạng thái</th>
                         <th scope="col">Báo lỗi</th>
                         <th scope="col">Mã định danh</th>
