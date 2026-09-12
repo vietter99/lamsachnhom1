@@ -316,6 +316,10 @@ export function taoPanel() {
         </div>
 
         <div class="mls-body mls-view-caidat" id="mls-view-caidat" hidden>
+            <p class="mls-status" id="mls-status-caidat" role="status" aria-live="polite">
+                Chỉnh xong thì bấm Quay lại.
+            </p>
+
             <div class="mls-caidat-head">
                 <button type="button" data-act="dongcaidat">${ICONS.quayLai}<span>Quay lại</span></button>
                 <h3>Cài đặt</h3>
@@ -586,11 +590,20 @@ function capNhatBadgeHeader() {
     badge.hidden = false;
 }
 
+/**
+ * Ghi dòng trạng thái. Viết vào CẢ HAI màn.
+ *
+ * Nút "Thử kết nối" nằm ở màn Cài đặt, còn dòng trạng thái gốc nằm ở màn
+ * chính — mà mở Cài đặt thì màn chính bị ẩn. Kết quả: bấm Thử kết nối xong
+ * không thấy gì hiện ra, kể cả khi Apps Script báo lỗi rõ ràng.
+ */
 function datTrangThai(text, dangTai = false) {
-    const el = document.getElementById('mls-status');
-    if (!el) return;
-    el.innerHTML = dangTai ? '<span class="mls-spinner"></span>' : '';
-    el.append(text);
+    for (const id of ['mls-status', 'mls-status-caidat']) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        el.innerHTML = dangTai ? '<span class="mls-spinner"></span>' : '';
+        el.append(text);
+    }
 }
 
 function datTienDo(xong, tong) {

@@ -245,6 +245,7 @@ export const PANEL_CSS = `
 #mls-panel.mls-collapsed .mls-body { display: none; }
 
 /* ---------- Màn Cài đặt (thay hẳn màn chính, không phải phần cuộn thêm) ---------- */
+#mls-panel #mls-status-caidat { margin-bottom: var(--mls-s3); }
 #mls-panel .mls-caidat-head {
     display: flex;
     align-items: center;
