@@ -9,8 +9,34 @@ const NHAN_MA_LOI = {
     NOLINK: 'Hồ sơ quét chưa gắn giấy chứng nhận',
     maSoDinhDanh: 'Thiếu mã số định danh',
     thoiHanSuDung: 'Thiếu thời hạn sử dụng',
+    // Gặp trong dữ liệu thật khi chạy 54 thửa: trước đây rơi thẳng ra sheet
+    // dưới dạng mã trần ("soGiayTo; ngayVaoSo"), người nhận bảng tổng không
+    // đoán được là thiếu gì.
+    ngayVaoSo: 'Thiếu ngày vào sổ',
+    soVaoSo: 'Thiếu số vào sổ',
+    soGiayTo: 'Thiếu số giấy tờ',
+    diaChi: 'Thiếu địa chỉ',
+    ngaySinh: 'Thiếu ngày sinh',
+    namSinh: 'Thiếu năm sinh',
+    gioiTinh: 'Thiếu giới tính',
+    dienTich: 'Thiếu diện tích',
+    mucDichSuDung: 'Thiếu mục đích sử dụng',
+    nguonGocSuDung: 'Thiếu nguồn gốc sử dụng',
     null: 'Thiếu dữ liệu',
 };
+
+/**
+ * Đổi mã lỗi thành câu tiếng Việt.
+ *
+ * Mã lạ giữ nguyên văn để không phân loại sai trường hợp mới — trừ mã chỉ gồm
+ * chữ số ("0"), thứ không nói được gì với người đọc bảng tổng. Dữ liệu thật đã
+ * đẩy một ô Ghi chú thành đúng chuỗi "ngayVaoSo; 0".
+ */
+function nhanChoMaLoi(maLoi) {
+    if (NHAN_MA_LOI[maLoi]) return NHAN_MA_LOI[maLoi];
+    if (/^\d+$/.test(String(maLoi ?? '').trim())) return 'Thiếu dữ liệu';
+    return maLoi;
+}
 
 const NHAN_NHOM = {
     HOSOQUET: 'Hồ sơ quét',
@@ -51,7 +77,7 @@ export function bocMaLoi(raw) {
         tinhHinhDangKyId: thucThe.TINHHINHDANGKY || '',
         giayChungNhanKey: thucThe.GIAYCHUNGNHAN || '',
         nhanNhom: NHAN_NHOM[nhom] || nhom,
-        nhanMaLoi: NHAN_MA_LOI[maLoi] || maLoi,
+        nhanMaLoi: nhanChoMaLoi(maLoi),
     };
 }
 
