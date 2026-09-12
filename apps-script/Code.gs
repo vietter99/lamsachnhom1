@@ -222,7 +222,7 @@ function timDong(kho, khoa) {
   for (var t = 0; t < kho.length; t++) {
     var g = kho[t].giaTri;
     for (var i = 0; i < g.length; i++) {
-      if (chuanHoa(g[i][0]) === khoa) {
+      if (oChuaSo(g[i][0], khoa)) {
         ra.push({
           sheet: kho[t].sheet,
           ten: kho[t].ten,
@@ -243,6 +243,24 @@ function moTaThuaTrongSheet(dongKhop) {
     ra.push('tờ ' + dongKhop[i].to + ' thửa ' + dongKhop[i].thua);
   }
   return ra.join('; ');
+}
+
+/**
+ * Ô sheet có khớp số phát hành đang tìm không.
+ *
+ * Một ô có thể chứa NHIỀU số của cùng một thửa, ngăn bằng dấu chấm phẩy:
+ * "K 550097;K 550096;K 550094". So bằng nhau tuyệt đối thì cả ô đó không khớp
+ * số nào — chính là lý do một lượt ghi 54 thửa trả về 0 dòng ghi được. Tách ô
+ * ra rồi so từng phần.
+ */
+function oChuaSo(oSheet, khoa) {
+  if (!khoa) return false;
+  var van = String(oSheet == null ? '' : oSheet);
+  var phan = van.split(';').join('|').split(',').join('|').split('\n').join('|').split('|');
+  for (var i = 0; i < phan.length; i++) {
+    if (chuanHoa(phan[i]) === khoa) return true;
+  }
+  return false;
 }
 
 /** Bỏ khoảng trắng và viết hoa, để `dl242877` khớp `DL 242877`. */

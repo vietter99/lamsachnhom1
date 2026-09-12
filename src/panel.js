@@ -1950,6 +1950,53 @@ const TRANG_THAI_SHEET = {
  * đúng những gì bảng kết quả trong panel đang hiện, gộp thành một dòng, để mở
  * sheet là biết hồ sơ vướng gì mà sửa, khỏi phải tra lại.
  */
+/**
+ * Bỏ id nội bộ khỏi câu thông báo của máy chủ, rồi gộp câu trùng.
+ *
+ * Máy chủ trả về nguyên văn kiểu:
+ *
+ *   Tình hình đăng ký 13608835 có giấy chứng nhận 339242_11 không có ngayVaoSo;
+ *   Tình hình đăng ký 13608835 có giấy chứng nhận 339242_11 có hồ sơ quét chưa
+ *   liên kết giấy chứng nhận; Tình hình đăng ký 13608835 có giấy chứng nhận
+ *   339243_11 không có ngayVaoSo; ...
+ *
+ * Mỗi giấy chứng nhận lặp lại đúng một bộ câu, chỉ khác cái id. Người đọc bảng
+ * tổng không tra được id nội bộ của MPLIS, nên id chỉ làm ô dài ra và che mất
+ * phần đáng đọc. Bỏ id đi thì các câu trùng nhau, gộp lại còn vài ý.
+ */
+function gonThongBao(van) {
+    if (!van) return '';
+
+    const doiTen = {
+        ngayVaoSo: 'ngày vào sổ',
+        soVaoSo: 'số vào sổ',
+        soGiayTo: 'số giấy tờ',
+        maSoDinhDanh: 'mã số định danh',
+        thoiHanSuDung: 'thời hạn sử dụng',
+        diaChi: 'địa chỉ',
+    };
+
+    const cau = String(van)
+        .split(/[;|]/)
+        .map((c) => c
+            .replace(/Tình hình đăng ký [0-9]+ /g, '')
+            .replace(/có giấy chứng nhận [0-9]+_[0-9]+ /g, 'giấy chứng nhận ')
+            .replace(/có (hộ gia đình|cá nhân|thửa đất|nhóm người|tổ chức|vợ chồng) [0-9]+_[0-9]+ /g, '')
+            .replace(/có mục đích sử dụng [0-9]+ /g, '')
+            .replace(/[0-9]+_[0-9]+/g, '')
+            .replace(/  +/g, ' ')
+            .trim())
+        .map((c) => {
+            let ra = c;
+            for (const ma of Object.keys(doiTen)) ra = ra.split(ma).join(doiTen[ma]);
+            return ra;
+        })
+        .map((c) => (c ? c.charAt(0).toUpperCase() + c.slice(1) : ''))
+        .filter(Boolean);
+
+    return Array.from(new Set(cau)).join('; ');
+}
+
 function dungTraCuuSheet(row) {
     const phan = [row.trangThai || ''];
 
@@ -1974,7 +2021,7 @@ function dungTraCuuSheet(row) {
     }
 
     if (row.daChuyenGcn) phan.push(row.daChuyenGcn);
-    if (row.thongBaoHeThong) phan.push(row.thongBaoHeThong);
+    if (row.thongBaoHeThong) phan.push(gonThongBao(row.thongBaoHeThong));
 
     return phan.filter(Boolean).join(' · ');
 }
