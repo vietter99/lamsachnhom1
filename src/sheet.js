@@ -41,7 +41,7 @@ export function luuUrlSheet(url) {
  * phát hành thì ghi đè lung tung sang thửa khác.
  * Trả về `{ ok, loi }`; không ném lỗi, để một hồ sơ hỏng không chặn cả lượt chạy.
  */
-export function ghiVaoSheet(row, ghiChu, traCuu, ganGcn) {
+export function ghiVaoSheet(row, o = {}) {
     return new Promise((resolve) => {
         const url = docUrlSheet();
         if (!url) return resolve({ ok: false, loi: 'Chưa cấu hình URL Apps Script' });
@@ -53,15 +53,14 @@ export function ghiVaoSheet(row, ghiChu, traCuu, ganGcn) {
             thu: Boolean(row.thu),
             danhSach: Array.isArray(row.danhSach) ? row.danhSach : undefined,
             soPhatHanh: row.soPhatHanh || '',
-            tinhHinhDangKyId: row.tinhHinhDangKyId || '',
-            thua: row.soThuTuThua || '',
+            // Tờ và thửa để Apps Script dò đúng dòng: một giấy phủ nhiều thửa,
+            // mỗi thửa một dòng riêng và trạng thái nhóm 1 riêng.
             to: row.soHieuToBanDo || '',
-            trangThai: row.trangThai || '',
-            maLoi: row.maLoiGop || '',
-            daChuyenGcn: row.daChuyenGcn || '',
-            ghiChu: ghiChu || '',
-            traCuu: traCuu || '',
-            ganGcn: ganGcn || '',
+            thua: row.soThuTuThua || '',
+            tinhHinhDangKyId: row.tinhHinhDangKyId || '',
+            thongTinThieu: o.thongTinThieu || '',
+            ganGcn: o.ganGcn || '',
+            ketLuan: o.ketLuan || '',
             thoiDiem: new Date().toISOString(),
         };
 

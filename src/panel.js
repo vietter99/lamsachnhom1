@@ -1761,42 +1761,42 @@ async function ghiKetQuaVaoSheet(tuDong = false) {
     // Gom theo số phát hành trước khi ghi. Sheet dò dòng bằng số phát hành, mà
     // một giấy phủ nhiều thửa — ghi lần lượt từng thửa thì lần ghi sau đè lên
     // lần trước, cuối cùng cả nhóm mang trạng thái của đúng thửa cuối cùng.
-    const nhom = gomTheoSoPhatHanh(ketQua);
-
+    // Ghi từng thửa một. Sheet có cột Số tờ bản đồ và Số thứ tự thửa đất nên
+    // Apps Script siết được đúng dòng của thửa đó — không còn cảnh thửa ghi sau
+    // đè lên thửa ghi trước như khi chỉ dò theo số phát hành.
     dangChay = true;
     yeuCauDung = false;
     datNut(true);
-    datTienDo(0, nhom.length);
+    datTienDo(0, ketQua.length);
 
     let daGhi = 0;
     const loi = [];
     const nhatKySheet = [];
 
-    for (let i = 0; i < nhom.length; i += 1) {
+    for (let i = 0; i < ketQua.length; i += 1) {
         if (yeuCauDung) break;
-        const { soPhatHanh, dong } = nhom[i];
-        const row = dong[0];
-        datTrangThai(`Ghi sheet ${i + 1}/${nhom.length}: ${soPhatHanh}`, true);
+        const row = ketQua[i];
+        const nhan = `${row.soPhatHanh}${nhanThua(row) ? ' (' + nhanThua(row) + ')' : ''}`;
+        datTrangThai(`Ghi sheet ${i + 1}/${ketQua.length}: ${nhan}`, true);
 
-        const cotK = trangThaiGopSheet(dong);
-        const cotL = gopTheoThua(dong, dungGhiChuSheet);
-        const cotN = gopTheoThua(dong, dungTraCuuSheet);
-        const cotO = gopTheoThua(dong, dungGanGcnSheet);
-        const kq = await ghiVaoSheet({ ...row, soPhatHanh, trangThai: cotK }, cotL, cotN, cotO);
+        const cotH = dungGhiChuSheet(row);
+        const cotO = dungGanGcnSheet(row);
+        const kq = await ghiVaoSheet(row, { thongTinThieu: cotH, ganGcn: cotO });
+
         if (kq.ok) {
             daGhi += 1;
             const oDong = (kq.chiTiet?.dong || []).join(', ') || '(không rõ dòng)';
-            for (const t of dong) t.trangThaiSheet = `Đã ghi ${oDong}`;
-            ghiNhatKy(`Sheet ✓ ${soPhatHanh} → ${cotK}${cotL ? ' · ' + cotL : ''} (${oDong})`, 'ok');
-            nhatKySheet.push({ 'Số phát hành': soPhatHanh, 'Thửa': dong.length, 'K': cotK, 'L': cotL, 'N': cotN, 'O': cotO, 'Dòng': oDong });
+            row.trangThaiSheet = `Đã ghi ${oDong}`;
+            ghiNhatKy(`Sheet ✓ ${nhan} → ${cotH} (${oDong})`, 'ok');
+            nhatKySheet.push({ 'Số phát hành': row.soPhatHanh, 'Tờ': row.soHieuToBanDo, 'Thửa': row.soThuTuThua, 'H': cotH, 'O': cotO, 'Dòng': oDong });
         } else {
-            loi.push(`${soPhatHanh}: ${kq.loi}`);
-            for (const t of dong) t.trangThaiSheet = `Lỗi: ${kq.loi}`;
-            ghiNhatKy(`Sheet ✗ ${soPhatHanh}: ${kq.loi}`, 'err');
-            nhatKySheet.push({ 'Số phát hành': soPhatHanh, 'Thửa': dong.length, 'K': cotK, 'L': cotL, 'N': cotN, 'O': cotO, 'Dòng': 'LỖI: ' + kq.loi });
+            loi.push(`${nhan}: ${kq.loi}`);
+            row.trangThaiSheet = `Lỗi: ${kq.loi}`;
+            ghiNhatKy(`Sheet ✗ ${nhan}: ${kq.loi}`, 'err');
+            nhatKySheet.push({ 'Số phát hành': row.soPhatHanh, 'Tờ': row.soHieuToBanDo, 'Thửa': row.soThuTuThua, 'H': cotH, 'O': cotO, 'Dòng': 'LỖI: ' + kq.loi });
         }
 
-        datTienDo(i + 1, nhom.length);
+        datTienDo(i + 1, ketQua.length);
         await sleep(200);
     }
 
@@ -1846,8 +1846,7 @@ async function thuKetNoiSheet() {
 
     datTrangThai('Đang thử kết nối Apps Script…', true);
     const kq = await ghiVaoSheet(
-        { thu: true, danhSach, soPhatHanh: danhSach[0] || '', trangThai: '', maLoiGop: '', daChuyenGcn: '' },
-        ''
+        { thu: true, danhSach, soPhatHanh: danhSach[0] || '' }
     );
 
     if (!kq.ok) {
@@ -1871,16 +1870,6 @@ async function thuKetNoiSheet() {
     );
 }
 
-/** Gom kết quả theo số phát hành, giữ nguyên thứ tự gặp đầu tiên. */
-function gomTheoSoPhatHanh(danhSach) {
-    const theoSo = new Map();
-    for (const row of danhSach) {
-        const khoa = chuanHoaDeSo(row.soPhatHanh);
-        if (!theoSo.has(khoa)) theoSo.set(khoa, { soPhatHanh: row.soPhatHanh, dong: [] });
-        theoSo.get(khoa).dong.push(row);
-    }
-    return Array.from(theoSo.values());
-}
 
 /** "tờ 241 thửa 170" — nhãn nhận diện một thửa trong ghi chú gộp. */
 function nhanThua(row) {
@@ -1890,49 +1879,8 @@ function nhanThua(row) {
     return phan.join(' ');
 }
 
-/**
- * Gộp nội dung của mọi thửa cùng một giấy chứng nhận thành một ô sheet.
- *
- * Mọi thửa cùng kết quả thì ghi đúng một câu, giữ nguyên mẫu chữ cố định để
- * copy sang bảng tổng. Các thửa khác nhau mới chua tờ/thửa vào trước từng
- * phần — nếu không, một giấy có thửa đạt thửa chưa đạt sẽ chỉ còn lại kết quả
- * của một thửa và người đọc không biết là thửa nào.
- */
-function gopTheoThua(dong, dungNoiDung) {
-    const phan = dong.map((r) => ({ nhan: nhanThua(r), noiDung: dungNoiDung(r) }));
-    const khac = new Set(phan.map((p) => p.noiDung));
 
-    if (khac.size <= 1) return phan[0] ? phan[0].noiDung : '';
 
-    return phan
-        .filter((p) => p.noiDung)
-        .map((p) => (p.nhan ? `${p.nhan}: ${p.noiDung}` : p.noiDung))
-        .join(' | ');
-}
-
-/**
- * Trạng thái gộp cho cột K (dropdown ba giá trị).
- *
- * Còn một thửa chưa xong thì cả giấy chưa xong — đánh "Hoàn thành" trong khi
- * còn thửa dở là dạng sai nguy hiểm nhất ở bảng tổng, vì không ai rà lại.
- */
-function trangThaiGopSheet(dong) {
-    const ds = dong.map((r) => TRANG_THAI_SHEET[r.trangThai] || 'Khác');
-    if (ds.includes('Chưa hoàn thành')) return 'Chưa hoàn thành';
-    if (ds.every((x) => x === 'Hoàn thành')) return 'Hoàn thành';
-    return 'Khác';
-}
-
-/**
- * Cột Trạng Thái trong sheet dùng dropdown ba lựa chọn. Ghi chuỗi ngoài danh
- * sách đó thì Google Sheets nhận nhưng đánh dấu ô là giá trị không hợp lệ.
- */
-const TRANG_THAI_SHEET = {
-    [TRANG_THAI.DAT]: 'Hoàn thành',
-    [TRANG_THAI.CHUA_DAT]: 'Chưa hoàn thành',
-    [TRANG_THAI.KHONG_THAY]: 'Khác',
-    [TRANG_THAI.LOI]: 'Khác',
-};
 
 /**
  * Nội dung cột Ghi chú, bám theo cột Trạng Thái. Ba khả năng, không hơn.

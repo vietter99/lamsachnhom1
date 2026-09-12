@@ -34,33 +34,41 @@ var CAU_HINH = {
    */
   TAB: [],
 
-  // Cột chứa số phát hành giấy chứng nhận, dùng để tìm dòng.
-  COT_SO_PHAT_HANH: 'I',
+  /**
+   * CỘT DÙNG ĐỂ TÌM DÒNG.
+   *
+   * Cấu hình sẵn theo bảng tổng đang dùng:
+   *   C  Số tờ bản đồ
+   *   D  Số thứ tự thửa đất
+   *   G  Thông tin giấy chứng nhận  (ô này chứa được NHIỀU số, ngăn bằng ';')
+   *
+   * Mở sheet, nhìn chữ cái cột ngay dưới thanh công cụ mà điền. Điền sai cột
+   * là ghi đè lên dữ liệu người khác — kiểm lại trước khi chạy thật.
+   */
+  COT_SO_PHAT_HANH: 'G',
+  COT_TO_BAN_DO: 'C',
+  COT_SO_THUA: 'D',
 
   /**
-   * Cột Tờ bản đồ và Số thửa, dùng để tìm ĐÚNG dòng.
+   * CỘT ĐƯỢC GHI. Để rỗng ('') là không đụng tới cột đó.
    *
-   * Một giấy chứng nhận phủ nhiều thửa: sheet có nhiều dòng cùng số phát hành
-   * nhưng khác thửa, và mỗi thửa có trạng thái nhóm 1 riêng. Chỉ dò theo số
-   * phát hành thì kết quả của thửa này ghi đè lên mọi thửa còn lại.
+   *   H  Thông tin thiếu     thiếu cái gì, đã bỏ id nội bộ và gộp câu trùng
+   *   O  Kết quả thực hiện   Đã gắn GCN / Chưa gắn GCN / Không có GCN
+   *   N  Ngày thực hiện      ngày chạy tool
    *
-   * Điền chữ cái cột vào đây (ví dụ 'G' và 'H'). Để rỗng cả hai thì quay lại
-   * cách cũ: ghi cho mọi dòng cùng số phát hành.
+   * Cột K (SỐ THỬA MỚI), L (TB MỚI), M (Người thực hiện) cố tình để trống:
+   * đó là phần người khác tự điền, tool không chạm vào.
    */
-  COT_TO_BAN_DO: '',
-  COT_SO_THUA: '',
-
-  // Cột sẽ được ghi.
-  COT_TRANG_THAI: 'K',
-  COT_GHI_CHU: 'L',
-
-  // Nhật ký tra cứu đầy đủ: trạng thái, thiếu thông tin gì, tình hình chữ ký số.
-  // Để rỗng ('') nếu sheet của bạn không có cột này.
-  COT_TRA_CUU: 'N',
-
-  // Tình trạng gắn giấy chứng nhận: Đã gắn GCN / Chưa gắn GCN / Không có GCN.
-  // Tách riêng để copy nguyên cột sang bảng tổng của người khác.
+  COT_THONG_TIN_THIEU: 'H',
   COT_GAN_GCN: 'O',
+  COT_NGAY: 'N',
+
+  /**
+   * Cột phân loại nhóm (ví dụ 'E' — "Phân loại dữ liệu theo Kế hoạch 2959").
+   * Để rỗng thì tool KHÔNG ghi kết luận nhóm 1 đi đâu cả. Bật lên là ghi đè
+   * giá trị phân loại sẵn có, nên chỉ bật khi chắc chắn.
+   */
+  COT_KET_LUAN: '',
 
   // Dòng đầu tiên chứa dữ liệu (bỏ qua dòng tiêu đề).
   DONG_DAU: 2,
@@ -171,18 +179,15 @@ function doPost(e) {
     }
 
     var daGhi = [];
+    var homNay = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy');
+
     for (var j = 0; j < dongKhop.length; j++) {
       var d = dongKhop[j];
-      if (data.trangThai) {
-        d.sheet.getRange(d.dong, soCot(CAU_HINH.COT_TRANG_THAI)).setValue(data.trangThai);
-      }
-      // Ghi chú rỗng vẫn ghi, để xoá nội dung cũ khi hồ sơ đã hoàn thành.
-      d.sheet.getRange(d.dong, soCot(CAU_HINH.COT_GHI_CHU)).setValue(data.ghiChu || '');
-      if (CAU_HINH.COT_TRA_CUU) {
-        d.sheet.getRange(d.dong, soCot(CAU_HINH.COT_TRA_CUU)).setValue(data.traCuu || '');
-      }
-      if (CAU_HINH.COT_GAN_GCN) {
-        d.sheet.getRange(d.dong, soCot(CAU_HINH.COT_GAN_GCN)).setValue(data.ganGcn || '');
+      ghiO(d, CAU_HINH.COT_THONG_TIN_THIEU, data.thongTinThieu);
+      ghiO(d, CAU_HINH.COT_GAN_GCN, data.ganGcn);
+      ghiO(d, CAU_HINH.COT_KET_LUAN, data.ketLuan);
+      if (CAU_HINH.COT_NGAY) {
+        d.sheet.getRange(d.dong, soCot(CAU_HINH.COT_NGAY)).setValue(homNay);
       }
       daGhi.push(d.ten + '!' + d.dong);
     }
@@ -213,6 +218,17 @@ function layDanhSachTab() {
     if (CAU_HINH.TAB.indexOf(tatCa[i].getName()) >= 0) chon.push(tatCa[i]);
   }
   return chon;
+}
+
+/**
+ * Ghi một ô, bỏ qua nếu cột chưa cấu hình.
+ *
+ * Giá trị rỗng vẫn ghi (xoá nội dung cũ) — trừ khi cột để rỗng trong CAU_HINH,
+ * lúc đó không chạm vào cột đó chút nào.
+ */
+function ghiO(dong, cot, giaTri) {
+  if (!cot) return;
+  dong.sheet.getRange(dong.dong, soCot(cot)).setValue(giaTri || '');
 }
 
 /** Tìm mọi dòng khớp số phát hành, trên mọi tab. Kèm tờ/thửa của từng dòng. */
