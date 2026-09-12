@@ -35,43 +35,29 @@ var CAU_HINH = {
   TAB: [],
 
   /**
-   * CỘT DÙNG ĐỂ TÌM DÒNG.
+   * CỘT LÀM VIỆC — KHAI BẰNG TÊN TIÊU ĐỀ, KHÔNG PHẢI CHỮ CÁI CỘT.
    *
-   * Cấu hình sẵn theo bảng tổng đang dùng:
-   *   C  Số tờ bản đồ
-   *   D  Số thứ tự thửa đất
-   *   G  Thông tin giấy chứng nhận  (ô này chứa được NHIỀU số, ngăn bằng ';')
+   * Script tự dò tiêu đề trong mấy dòng đầu rồi suy ra chữ cái cột. Khai bằng
+   * chữ cái ('G', 'H'...) từng làm ghi lệch cột hai lần: đếm nhầm một cột là
+   * ghi đè lên dữ liệu người khác, mà nhìn bằng mắt thì không phát hiện ra.
    *
-   * Mở sheet, nhìn chữ cái cột ngay dưới thanh công cụ mà điền. Điền sai cột
-   * là ghi đè lên dữ liệu người khác — kiểm lại trước khi chạy thật.
+   * Tên phải khớp tiêu đề trong sheet (không phân biệt hoa thường, dấu cách
+   * thừa, và dấu tiếng Việt). Để rỗng ('') là không dùng cột đó.
    */
-  COT_SO_PHAT_HANH: 'G',
-  COT_TO_BAN_DO: 'C',
-  COT_SO_THUA: 'D',
+  TIEU_DE_SO_PHAT_HANH: 'Thông tin giấy chứng nhận',
+  TIEU_DE_TO: 'Số tờ bản đồ',
+  TIEU_DE_THUA: 'Số thứ tự thửa đất',
 
-  /**
-   * CỘT ĐƯỢC GHI. Để rỗng ('') là không đụng tới cột đó.
-   *
-   *   H  Thông tin thiếu     thiếu cái gì, đã bỏ id nội bộ và gộp câu trùng
-   *   O  Kết quả thực hiện   Đã gắn GCN / Chưa gắn GCN / Không có GCN
-   *   N  Ngày thực hiện      ngày chạy tool
-   *
-   * Cột K (SỐ THỬA MỚI), L (TB MỚI), M (Người thực hiện) cố tình để trống:
-   * đó là phần người khác tự điền, tool không chạm vào.
-   */
-  COT_THONG_TIN_THIEU: 'H',
-  COT_GAN_GCN: 'O',
-  COT_NGAY: 'N',
+  TIEU_DE_THONG_TIN_THIEU: 'Thông tin thiếu',
+  TIEU_DE_KET_QUA: 'Kết quả thực hiện',
+  TIEU_DE_NGAY: 'Ngày thực hiện',
 
-  /**
-   * Cột phân loại nhóm (ví dụ 'E' — "Phân loại dữ liệu theo Kế hoạch 2959").
-   * Để rỗng thì tool KHÔNG ghi kết luận nhóm 1 đi đâu cả. Bật lên là ghi đè
-   * giá trị phân loại sẵn có, nên chỉ bật khi chắc chắn.
-   */
-  COT_KET_LUAN: '',
+  // Tình trạng gắn GCN. Sheet hiện chưa có cột riêng cho việc này; thêm cột
+  // rồi điền đúng tên tiêu đề vào đây là tool ghi.
+  TIEU_DE_GAN_GCN: '',
 
-  // Dòng đầu tiên chứa dữ liệu (bỏ qua dòng tiêu đề).
-  DONG_DAU: 2,
+  // Số dòng đầu sheet dùng làm tiêu đề (tiêu đề gộp nhiều dòng thì tăng lên).
+  SO_DONG_TIEU_DE: 3,
 
   // Để rỗng nếu không cần mật khẩu.
   MAT_KHAU: '',
@@ -93,30 +79,41 @@ function doPost(e) {
       return traLoi({ ok: false, error: 'Không tab nào khớp cấu hình TAB' });
     }
 
-    // Nạp cột số phát hành của từng tab một lần, dùng lại cho mọi phép tìm.
+    // Nạp sẵn cột cần dò của từng tab, dùng lại cho mọi phép tìm.
     var kho = [];
     var tongDong = 0;
+    var thieuCot = [];
     for (var t = 0; t < dsTab.length; t++) {
       var sh = dsTab[t];
-      var n = sh.getLastRow() - CAU_HINH.DONG_DAU + 1;
+      var dc = doCot(sh);
+      if (!dc.cot.soPhatHanh) {
+        thieuCot.push(sh.getName());
+        continue;
+      }
+      var n = sh.getLastRow() - dc.dongDau + 1;
       if (n < 1) continue;
       kho.push({
         sheet: sh,
         ten: sh.getName(),
-        giaTri: sh.getRange(CAU_HINH.DONG_DAU, soCot(CAU_HINH.COT_SO_PHAT_HANH), n, 1).getValues(),
-        to: CAU_HINH.COT_TO_BAN_DO
-          ? sh.getRange(CAU_HINH.DONG_DAU, soCot(CAU_HINH.COT_TO_BAN_DO), n, 1).getValues()
-          : null,
-        thua: CAU_HINH.COT_SO_THUA
-          ? sh.getRange(CAU_HINH.DONG_DAU, soCot(CAU_HINH.COT_SO_THUA), n, 1).getValues()
-          : null,
+        cot: dc.cot,
+        dongDau: dc.dongDau,
+        giaTri: sh.getRange(dc.dongDau, dc.cot.soPhatHanh, n, 1).getValues(),
+        to: dc.cot.to ? sh.getRange(dc.dongDau, dc.cot.to, n, 1).getValues() : null,
+        thua: dc.cot.thua ? sh.getRange(dc.dongDau, dc.cot.thua, n, 1).getValues() : null
       });
       tongDong += n;
     }
-    if (!kho.length) return traLoi({ ok: false, error: 'Mọi tab đều không có dòng dữ liệu' });
 
-    // Chế độ thử: chỉ báo tình hình, không ghi gì. Kiểm cả danh sách người dùng
-    // đang định chạy, để thấy ngay số nào vắng mặt trước khi chạy thật.
+    if (!kho.length) {
+      return traLoi({
+        ok: false,
+        error: 'Không tab nào có cột tiêu đề "' + CAU_HINH.TIEU_DE_SO_PHAT_HANH +
+          '"' + (thieuCot.length ? ' (đã xem: ' + thieuCot.join(', ') + ')' : '') +
+          '. Kiểm lại tên tiêu đề trong CAU_HINH cho khớp sheet.'
+      });
+    }
+
+    // Chế độ thử: chỉ báo tình hình, không ghi gì.
     if (data.thu) {
       var canTim = (Array.isArray(data.danhSach) && data.danhSach.length)
         ? data.danhSach
@@ -136,10 +133,11 @@ function doPost(e) {
         tab: kho.map(function (x) { return x.ten; }).join(', '),
         soTab: kho.length,
         soDong: tongDong,
-        cotTim: CAU_HINH.COT_SO_PHAT_HANH,
+        cotDaDo: moTaCot(kho[0]),
+        dongDau: kho[0].dongDau,
         soDaTim: canTim.length,
         thay: thay,
-        khongThay: khongThay,
+        khongThay: khongThay
       });
     }
 
@@ -147,17 +145,18 @@ function doPost(e) {
     if (!dongKhop.length) {
       return traLoi({
         ok: false,
-        error: 'Không thấy ' + data.soPhatHanh + ' trong cột ' + CAU_HINH.COT_SO_PHAT_HANH +
-          ' của ' + kho.length + ' tab (' + tongDong + ' dòng đã quét)',
+        error: 'Không thấy ' + data.soPhatHanh + ' trong cột "' +
+          CAU_HINH.TIEU_DE_SO_PHAT_HANH + '" của ' + kho.length + ' tab (' +
+          tongDong + ' dòng đã quét)'
       });
     }
 
-    // Có cấu hình cột Tờ/Thửa thì siết lại còn đúng dòng của thửa đang ghi.
-    // KHÔNG tự lùi về ghi cả nhóm khi siết ra rỗng: ghi nhầm sang thửa khác
-    // chính là lỗi mà bước này sinh ra để chặn.
-    var locTheoThua = CAU_HINH.COT_TO_BAN_DO && CAU_HINH.COT_SO_THUA &&
-      (data.to !== undefined && data.to !== null && data.to !== '') &&
-      (data.thua !== undefined && data.thua !== null && data.thua !== '');
+    // Siết còn đúng dòng của thửa đang ghi. KHÔNG tự lùi về ghi cả nhóm khi
+    // siết ra rỗng: ghi nhầm sang thửa khác chính là lỗi bước này sinh ra để
+    // chặn.
+    var locTheoThua = kho[0].cot.to && kho[0].cot.thua &&
+      data.to !== undefined && data.to !== null && data.to !== '' &&
+      data.thua !== undefined && data.thua !== null && data.thua !== '';
 
     if (locTheoThua) {
       var hep = [];
@@ -172,7 +171,7 @@ function doPost(e) {
           ok: false,
           error: 'Thấy ' + data.soPhatHanh + ' (' + dongKhop.length + ' dòng) nhưng không dòng nào' +
             ' khớp tờ ' + data.to + ' thửa ' + data.thua +
-            '. Có trong sheet: ' + moTaThuaTrongSheet(dongKhop),
+            '. Có trong sheet: ' + moTaThuaTrongSheet(dongKhop)
         });
       }
       dongKhop = hep;
@@ -183,12 +182,10 @@ function doPost(e) {
 
     for (var j = 0; j < dongKhop.length; j++) {
       var d = dongKhop[j];
-      ghiO(d, CAU_HINH.COT_THONG_TIN_THIEU, data.thongTinThieu);
-      ghiO(d, CAU_HINH.COT_GAN_GCN, data.ganGcn);
-      ghiO(d, CAU_HINH.COT_KET_LUAN, data.ketLuan);
-      if (CAU_HINH.COT_NGAY) {
-        d.sheet.getRange(d.dong, soCot(CAU_HINH.COT_NGAY)).setValue(homNay);
-      }
+      ghiO(d, d.cot.thongTinThieu, data.thongTinThieu);
+      ghiO(d, d.cot.ketQua, data.ketQua);
+      ghiO(d, d.cot.ganGcn, data.ganGcn);
+      if (d.cot.ngay) d.sheet.getRange(d.dong, d.cot.ngay).setValue(homNay);
       daGhi.push(d.ten + '!' + d.dong);
     }
 
@@ -226,9 +223,66 @@ function layDanhSachTab() {
  * Giá trị rỗng vẫn ghi (xoá nội dung cũ) — trừ khi cột để rỗng trong CAU_HINH,
  * lúc đó không chạm vào cột đó chút nào.
  */
+/** Bỏ dấu tiếng Việt, gộp khoảng trắng, viết thường — để so tên tiêu đề. */
+function chuanTieuDe(v) {
+  return String(v == null ? '' : v)
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/d/gi, 'd')
+    .replace(/[^a-zA-Z0-9]+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Dò vị trí các cột theo TÊN TIÊU ĐỀ trong mấy dòng đầu sheet.
+ *
+ * Trả về { cot: {khoa: soCot}, dongDau }. `dongDau` là dòng ngay sau dòng
+ * tiêu đề cuối cùng tìm thấy — tiêu đề gộp hai dòng thì dữ liệu bắt đầu từ
+ * dòng thứ ba, khai cứng số đó dễ lệch nên để script tự suy.
+ */
+function doCot(sheet) {
+  var canTim = {
+    soPhatHanh: CAU_HINH.TIEU_DE_SO_PHAT_HANH,
+    to: CAU_HINH.TIEU_DE_TO,
+    thua: CAU_HINH.TIEU_DE_THUA,
+    thongTinThieu: CAU_HINH.TIEU_DE_THONG_TIN_THIEU,
+    ketQua: CAU_HINH.TIEU_DE_KET_QUA,
+    ngay: CAU_HINH.TIEU_DE_NGAY,
+    ganGcn: CAU_HINH.TIEU_DE_GAN_GCN
+  };
+
+  var soDong = Math.min(CAU_HINH.SO_DONG_TIEU_DE, sheet.getLastRow());
+  if (soDong < 1) return { cot: {}, dongDau: 2 };
+
+  var o = sheet.getRange(1, 1, soDong, sheet.getLastColumn()).getValues();
+  var cot = {};
+  var dongCuoi = 0;
+
+  for (var r = 0; r < o.length; r++) {
+    for (var c = 0; c < o[r].length; c++) {
+      var oChuan = chuanTieuDe(o[r][c]);
+      if (!oChuan) continue;
+      for (var khoa in canTim) {
+        if (!canTim[khoa] || cot[khoa]) continue;
+        if (oChuan === chuanTieuDe(canTim[khoa])) {
+          cot[khoa] = c + 1;
+          if (r + 1 > dongCuoi) dongCuoi = r + 1;
+        }
+      }
+    }
+  }
+
+  return { cot: cot, dongDau: dongCuoi + 1 };
+}
+
 function ghiO(dong, cot, giaTri) {
   if (!cot) return;
-  dong.sheet.getRange(dong.dong, soCot(cot)).setValue(giaTri || '');
+  // Không ghi đè bằng chuỗi rỗng. Ô có thể đang chứa chữ của người khác; xoá
+  // đi thì mất dữ liệu mà tool cũng chẳng có gì thay vào. Muốn báo "không còn
+  // thiếu gì" thì gửi hẳn chữ "Không thiếu", đừng gửi rỗng.
+  if (giaTri === undefined || giaTri === null || giaTri === '') return;
+  dong.sheet.getRange(dong.dong, cot).setValue(giaTri);
 }
 
 /** Tìm mọi dòng khớp số phát hành, trên mọi tab. Kèm tờ/thửa của từng dòng. */
@@ -242,12 +296,31 @@ function timDong(kho, khoa) {
         ra.push({
           sheet: kho[t].sheet,
           ten: kho[t].ten,
-          dong: CAU_HINH.DONG_DAU + i,
+          cot: kho[t].cot,
+          dong: kho[t].dongDau + i,
           to: kho[t].to ? kho[t].to[i][0] : '',
-          thua: kho[t].thua ? kho[t].thua[i][0] : '',
+          thua: kho[t].thua ? kho[t].thua[i][0] : ''
         });
       }
     }
+  }
+  return ra;
+}
+
+/** Liệt kê cột đã dò được, để chế độ thử nói rõ nó sẽ ghi vào đâu. */
+function moTaCot(mot) {
+  var ra = [];
+  for (var khoa in mot.cot) ra.push(khoa + '=' + chuCot(mot.cot[khoa]));
+  return ra.join(', ');
+}
+
+/** 1 -> 'A', 8 -> 'H', 27 -> 'AA'. */
+function chuCot(n) {
+  var ra = '';
+  while (n > 0) {
+    var du = (n - 1) % 26;
+    ra = String.fromCharCode(65 + du) + ra;
+    n = Math.floor((n - 1) / 26);
   }
   return ra;
 }

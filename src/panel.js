@@ -1779,9 +1779,9 @@ async function ghiKetQuaVaoSheet(tuDong = false) {
         const nhan = `${row.soPhatHanh}${nhanThua(row) ? ' (' + nhanThua(row) + ')' : ''}`;
         datTrangThai(`Ghi sheet ${i + 1}/${ketQua.length}: ${nhan}`, true);
 
-        const cotH = dungGhiChuSheet(row);
-        const cotO = dungGanGcnSheet(row);
-        const kq = await ghiVaoSheet(row, { thongTinThieu: cotH, ganGcn: cotO });
+        const cotH = dungThongTinThieuSheet(row);
+        const cotO = dungKetQuaSheet(row);
+        const kq = await ghiVaoSheet(row, { thongTinThieu: cotH, ketQua: cotO });
 
         if (kq.ok) {
             daGhi += 1;
@@ -1988,17 +1988,17 @@ function chuaDongBoBaKhoi(row) {
 }
 
 /**
- * Nội dung cột Ghi chú (L), bám theo trạng thái nhóm 1 của ĐÚNG thửa đó.
+ * Cột O "Kết quả thực hiện": kết luận của thửa đó, một câu cố định.
  *
  *   Đạt, còn kẹt liên kết không gian   Chưa LKKG _ đã hoàn thành các nội dung khác
  *   Đạt, sạch                          Nhóm 1
- *   Chưa đạt                           liệt kê đang thiếu cái gì
+ *   Chưa đạt                           Chưa đạt nhóm 1
  *   Không tìm thấy / lỗi tra cứu       nêu đúng lý do đó
  *
- * Sheet này copy sang bảng tổng của người khác nên chữ phải cố định, không
- * thêm bớt tuỳ hồ sơ.
+ * Thiếu cụ thể cái gì nằm ở cột H, không nhét vào đây — cột này để đọc lướt
+ * một phát biết thửa đó xong hay chưa.
  */
-function dungGhiChuSheet(row) {
+function dungKetQuaSheet(row) {
     if (row.trangThai === TRANG_THAI.DAT) {
         return chuaDongBoBaKhoi(row)
             ? 'Chưa LKKG _ đã hoàn thành các nội dung khác'
@@ -2006,11 +2006,28 @@ function dungGhiChuSheet(row) {
     }
     if (row.trangThai === TRANG_THAI.KHONG_THAY) return 'Không tìm thấy số phát hành';
     if (row.trangThai === TRANG_THAI.LOI) return 'Lỗi tra cứu';
+    return 'Chưa đạt nhóm 1';
+}
 
-    // Chưa đạt: nói thẳng thiếu cái gì, lấy nhãn tiếng Việt của từng mã lỗi.
-    const thieu = (row.maLois || []).map((m) => m.nhanMaLoi).filter(Boolean);
-    const gop = Array.from(new Set(thieu)).join('; ');
-    return gop || 'Chưa đạt nhóm 1';
+/**
+ * Cột H "Thông tin thiếu": liệt kê đang thiếu những gì.
+ *
+ * Thửa đã đạt vẫn ghi "Không thiếu" chứ không ghi rỗng — ô này có sẵn chữ của
+ * người khác, ghi rỗng là xoá mất, mà để nguyên thì câu cũ thành sai sau khi
+ * hồ sơ đã sửa xong.
+ */
+function dungThongTinThieuSheet(row) {
+    if (row.trangThai === TRANG_THAI.DAT) return 'Không thiếu';
+    if (row.trangThai !== TRANG_THAI.CHUA_DAT) return '';
+
+    const phan = Array.from(new Set((row.maLois || []).map((m) => m.nhanMaLoi).filter(Boolean)));
+
+    // "Không có GCN" không phải mã lỗi máy chủ trả về mà do tool soi hồ sơ
+    // quét. Người đang gắn giấy cần biết: không có file thì không gắn được.
+    if (dungGanGcnSheet(row) === 'Không có GCN') {
+        phan.push('Không có file giấy chứng nhận trong hồ sơ quét');
+    }
+    return phan.join('; ');
 }
 
 /**

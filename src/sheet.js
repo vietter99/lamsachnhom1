@@ -59,8 +59,7 @@ export function ghiVaoSheet(row, o = {}) {
             thua: row.soThuTuThua || '',
             tinhHinhDangKyId: row.tinhHinhDangKyId || '',
             thongTinThieu: o.thongTinThieu || '',
-            ganGcn: o.ganGcn || '',
-            ketLuan: o.ketLuan || '',
+            ketQua: o.ketQua || '',
             thoiDiem: new Date().toISOString(),
         };
 
