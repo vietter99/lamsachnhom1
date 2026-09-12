@@ -33,10 +33,15 @@ export function luuUrlSheet(url) {
  * Đẩy một dòng kết quả lên sheet.
  *
  * `ghiChu` là kết luận ngắn cho cột L. `traCuu` là nhật ký tra cứu đầy đủ cho
- * cột N, để người làm biết hồ sơ vướng gì mà sửa.
+ * cột N, để người làm biết hồ sơ vướng gì mà sửa. `ganGcn` là tình trạng gắn
+ * giấy chứng nhận cho cột O, tách riêng để copy sang bảng tổng của người khác.
+ *
+ * `to` và `thua` gửi kèm để Apps Script dò đúng dòng: một giấy chứng nhận phủ
+ * nhiều thửa, mỗi thửa một dòng riêng và trạng thái nhóm 1 riêng, dò mỗi số
+ * phát hành thì ghi đè lung tung sang thửa khác.
  * Trả về `{ ok, loi }`; không ném lỗi, để một hồ sơ hỏng không chặn cả lượt chạy.
  */
-export function ghiVaoSheet(row, ghiChu, traCuu) {
+export function ghiVaoSheet(row, ghiChu, traCuu, ganGcn) {
     return new Promise((resolve) => {
         const url = docUrlSheet();
         if (!url) return resolve({ ok: false, loi: 'Chưa cấu hình URL Apps Script' });
@@ -56,6 +61,7 @@ export function ghiVaoSheet(row, ghiChu, traCuu) {
             daChuyenGcn: row.daChuyenGcn || '',
             ghiChu: ghiChu || '',
             traCuu: traCuu || '',
+            ganGcn: ganGcn || '',
             thoiDiem: new Date().toISOString(),
         };
 

@@ -27,15 +27,28 @@ export function normalizeSoPhatHanh(raw) {
     return m ? `${m[1]} ${m[2]}` : text;
 }
 
-/** Tách danh sách người dùng dán: mỗi dòng, hoặc ngăn bằng dấu phẩy / tab. */
+/**
+ * Tách danh sách người dùng dán: mỗi dòng, hoặc ngăn bằng dấu phẩy / tab.
+ *
+ * Trả về ĐÚNG chữ người dùng dán, chỉ cắt khoảng trắng thừa hai đầu. Người
+ * dùng copy số từ sheet của họ rồi copy kết quả ngược về sheet, nên tool tự
+ * viết hoa hay tự chèn dấu cách ("dl242877" thành "DL 242877") là bắt họ sửa
+ * tay lại cho khớp bản gốc.
+ *
+ * Chuẩn hoá vẫn còn nhưng chỉ làm KHOÁ bỏ trùng và dùng lúc gọi API, không
+ * thay chữ gốc. Mọi phép so khớp về sau (`chuanHoaDeSo`, `chuanHoa` bên Apps
+ * Script) đều bỏ dấu cách và viết hoa trước khi so, nên giữ bản gốc không làm
+ * hỏng chỗ nào.
+ */
 export function parseInputList(text) {
     const seen = new Set();
     const out = [];
     for (const part of String(text ?? '').split(/[\r\n,;\t]+/)) {
-        const value = normalizeSoPhatHanh(part);
-        if (value && !seen.has(value)) {
-            seen.add(value);
-            out.push(value);
+        const goc = String(part ?? '').trim();
+        const khoa = normalizeSoPhatHanh(part);
+        if (goc && khoa && !seen.has(khoa)) {
+            seen.add(khoa);
+            out.push(goc);
         }
     }
     return out;

@@ -10,6 +10,7 @@ import { ghiVaoSheet, docUrlSheet, luuUrlSheet } from './sheet.js';
 import { log, canhBao, loi as ghiLoi, moNhom, dongNhom, bang } from './log.js';
 import {
     parseInputList,
+    normalizeSoPhatHanh,
     escapeHtml,
     toCsv,
     downloadText,
@@ -264,62 +265,29 @@ export function taoPanel() {
         </header>
 
         <div class="mls-body" id="mls-view-chinh">
-            <fieldset class="mls-nhom">
-                <legend>1 · Tra cứu</legend>
+            <div class="mls-field">
+                <textarea id="mls-input" spellcheck="false" aria-label="Số phát hành, mỗi dòng một số"
+                    placeholder="Dán số phát hành, mỗi dòng một số&#10;DL 242877&#10;DL 242992"></textarea>
+                <p class="mls-hint">Giữ nguyên chữ bạn dán. Bỏ số trùng. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> để tra cứu.</p>
+            </div>
 
-                <div class="mls-field">
-                    <label for="mls-input">Số phát hành</label>
-                    <textarea id="mls-input" spellcheck="false"
-                        placeholder="DL 242877&#10;DL 242992"></textarea>
-                    <p class="mls-hint">Mỗi dòng một số. Tự viết hoa, bỏ số trùng. <kbd>Ctrl</kbd>+<kbd>Enter</kbd> để chạy.</p>
-                </div>
+            <div class="mls-actions">
+                <button type="button" class="mls-primary mls-rong" data-act="chay">${ICONS.search}<span>Tra cứu</span></button>
+                <button type="button" data-act="dung" disabled>${ICONS.stop}<span>Dừng</span></button>
+            </div>
 
-                <div class="mls-actions">
-                    <button type="button" class="mls-primary mls-rong" data-act="chay">${ICONS.search}<span>Tra cứu</span></button>
-                    <button type="button" data-act="dung" disabled>${ICONS.stop}<span>Dừng</span></button>
-                </div>
-            </fieldset>
-
-            <fieldset class="mls-nhom">
-                <legend>2 · Tải file quét</legend>
-                <div class="mls-actions">
-                    <button type="button" data-act="csv" disabled>${ICONS.download}<span>Tải CSV</span></button>
-                    <button type="button" data-act="zip" disabled>${ICONS.archive}<span>Tải file quét</span></button>
-                </div>
-            </fieldset>
-
-            <fieldset class="mls-nhom mls-nhom-ghi">
-                <legend>3 · Chạy tự động</legend>
-                <p class="mls-nhom-note">Nhãn <b class="mls-ghi">ghi</b> = sửa dữ liệu MPLIS, luôn hỏi xác nhận trước khi gửi. Bước nào chạy khi bấm nút dưới, chỉnh trong Cài đặt.</p>
-                <div class="mls-actions">
-                    <button type="button" class="mls-stop mls-rong" data-act="tudong">${ICONS.tudong}<span>Chạy tất cả tự động</span></button>
-                </div>
-                <div class="mls-actions mls-actions-nho">
-                    <button type="button" class="mls-stop" data-act="gan" disabled>${ICONS.link}<span>Gắn giấy</span></button>
-                    <button type="button" class="mls-stop" data-act="phanloai" disabled>${ICONS.send}<span>Gửi phân loại</span></button>
-                </div>
-            </fieldset>
-
-            <fieldset class="mls-nhom">
-                <legend>4 · Mã định danh thiếu</legend>
-                <p class="mls-hint">
-                    Tìm số CMND/CCCD qua hồ sơ tiếp nhận (một cửa) theo tên chủ, cho hồ sơ báo
-                    thiếu mã định danh cá nhân. Chỉ đọc, không ghi lên MPLIS.
-                </p>
-                <div class="mls-actions">
-                    <button type="button" data-act="timmadinhdanh" disabled>${ICONS.search}<span>Tìm mã định danh</span></button>
-                </div>
-            </fieldset>
-
-            <fieldset class="mls-nhom">
-                <legend>5 · Google Sheet</legend>
-                <p class="mls-hint" id="mls-sheet-trangthai">
-                    ${docUrlSheet() ? 'Đã kết nối. Chỉnh URL trong Cài đặt.' : 'Chưa kết nối. Dán URL Apps Script trong Cài đặt trước.'}
-                </p>
-                <div class="mls-actions">
-                    <button type="button" data-act="ghisheet" disabled>${ICONS.download}<span>Ghi kết quả vào sheet</span></button>
-                </div>
-            </fieldset>
+            <!-- Một thanh công cụ thay cho 5 khối xếp dọc. Nút đỏ = ghi lên
+                 MPLIS; màu là thứ phân biệt, không cần thêm chữ giải thích. -->
+            <div class="mls-thanh-cong-cu" role="group" aria-label="Thao tác trên kết quả">
+                <button type="button" data-act="tudong" class="mls-stop" title="Chạy lần lượt các bước đã bật trong Cài đặt. Ghi lên MPLIS.">${ICONS.tudong}<span>Chạy tất cả</span></button>
+                <button type="button" data-act="gan" class="mls-stop" disabled title="Gắn file quét vào giấy chứng nhận. Ghi lên MPLIS.">${ICONS.link}<span>Gắn giấy</span></button>
+                <button type="button" data-act="phanloai" class="mls-stop" disabled title="Gửi yêu cầu phân loại lại. Ghi lên MPLIS.">${ICONS.send}<span>Phân loại</span></button>
+                <span class="mls-thanh-ngan" aria-hidden="true"></span>
+                <button type="button" data-act="zip" disabled title="Tải file quét chưa ký số về máy">${ICONS.archive}<span>Tải file</span></button>
+                <button type="button" data-act="timmadinhdanh" disabled title="Tìm số CMND/CCCD và địa chỉ cho hồ sơ thiếu mã định danh. Chỉ đọc.">${ICONS.search}<span>Mã định danh</span></button>
+                <button type="button" data-act="ghisheet" disabled title="Ghi kết quả vào Google Sheet">${ICONS.download}<span>Ghi sheet</span></button>
+                <button type="button" data-act="csv" disabled title="Tải kết quả dạng CSV">${ICONS.download}<span>CSV</span></button>
+            </div>
 
             <div class="mls-progress" role="progressbar" id="mls-progress"
                  aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"
@@ -343,7 +311,7 @@ export function taoPanel() {
             </details>
 
             <p class="mls-foot">
-                Bước 1, 2 và 4 chỉ đọc dữ liệu. Chỉ bước 3 ghi lên MPLIS.
+                Nút đỏ ghi dữ liệu lên MPLIS và luôn hỏi xác nhận. Nút còn lại chỉ đọc.
             </p>
         </div>
 
@@ -696,7 +664,9 @@ async function chayTraCuu(tuDong = false) {
         datTrangThai(`Đang tra ${daXong + 1}/${danhSach.length}: ${soPhatHanh}`, true);
 
         try {
-            const res = await timTheoSoPhatHanh(soPhatHanh, scope);
+            // Gọi API bằng dạng chuẩn ("DL 242877"), nhưng mọi chỗ hiển thị và
+            // ghi ra sheet vẫn giữ đúng chữ người dùng dán.
+            const res = await timTheoSoPhatHanh(normalizeSoPhatHanh(soPhatHanh), scope);
             const records = res?.data || [];
 
             if (!records.length) {
@@ -1750,38 +1720,45 @@ async function ghiKetQuaVaoSheet(tuDong = false) {
         return { daGhi: 0, loi: [] };
     }
 
+    // Gom theo số phát hành trước khi ghi. Sheet dò dòng bằng số phát hành, mà
+    // một giấy phủ nhiều thửa — ghi lần lượt từng thửa thì lần ghi sau đè lên
+    // lần trước, cuối cùng cả nhóm mang trạng thái của đúng thửa cuối cùng.
+    const nhom = gomTheoSoPhatHanh(ketQua);
+
     dangChay = true;
     yeuCauDung = false;
     datNut(true);
-    datTienDo(0, ketQua.length);
+    datTienDo(0, nhom.length);
 
     let daGhi = 0;
     const loi = [];
     const nhatKySheet = [];
 
-    for (let i = 0; i < ketQua.length; i += 1) {
+    for (let i = 0; i < nhom.length; i += 1) {
         if (yeuCauDung) break;
-        const row = ketQua[i];
-        datTrangThai(`Ghi sheet ${i + 1}/${ketQua.length}: ${row.soPhatHanh}`, true);
+        const { soPhatHanh, dong } = nhom[i];
+        const row = dong[0];
+        datTrangThai(`Ghi sheet ${i + 1}/${nhom.length}: ${soPhatHanh}`, true);
 
-        const cotK = TRANG_THAI_SHEET[row.trangThai] || 'Khác';
-        const cotL = dungGhiChuSheet(row);
-        const cotN = dungTraCuuSheet(row);
-        const kq = await ghiVaoSheet({ ...row, trangThai: cotK }, cotL, cotN);
+        const cotK = trangThaiGopSheet(dong);
+        const cotL = gopTheoThua(dong, dungGhiChuSheet);
+        const cotN = gopTheoThua(dong, dungTraCuuSheet);
+        const cotO = gopTheoThua(dong, dungGanGcnSheet);
+        const kq = await ghiVaoSheet({ ...row, soPhatHanh, trangThai: cotK }, cotL, cotN, cotO);
         if (kq.ok) {
             daGhi += 1;
-            const dong = (kq.chiTiet?.dong || []).join(', ') || '(không rõ dòng)';
-            row.trangThaiSheet = `Đã ghi ${dong}`;
-            ghiNhatKy(`Sheet ✓ ${row.soPhatHanh} → ${cotK}${cotL ? ' · ' + cotL : ''} (${dong})`, 'ok');
-            nhatKySheet.push({ 'Số phát hành': row.soPhatHanh, 'K': cotK, 'L': cotL, 'N': cotN, 'Dòng': (kq.chiTiet?.dong || []).join(', ') });
+            const oDong = (kq.chiTiet?.dong || []).join(', ') || '(không rõ dòng)';
+            for (const t of dong) t.trangThaiSheet = `Đã ghi ${oDong}`;
+            ghiNhatKy(`Sheet ✓ ${soPhatHanh} → ${cotK}${cotL ? ' · ' + cotL : ''} (${oDong})`, 'ok');
+            nhatKySheet.push({ 'Số phát hành': soPhatHanh, 'Thửa': dong.length, 'K': cotK, 'L': cotL, 'N': cotN, 'O': cotO, 'Dòng': oDong });
         } else {
-            loi.push(`${row.soPhatHanh}: ${kq.loi}`);
-            row.trangThaiSheet = `Lỗi: ${kq.loi}`;
-            ghiNhatKy(`Sheet ✗ ${row.soPhatHanh}: ${kq.loi}`, 'err');
-            nhatKySheet.push({ 'Số phát hành': row.soPhatHanh, 'K': cotK, 'L': cotL, 'N': cotN, 'Dòng': 'LỖI: ' + kq.loi });
+            loi.push(`${soPhatHanh}: ${kq.loi}`);
+            for (const t of dong) t.trangThaiSheet = `Lỗi: ${kq.loi}`;
+            ghiNhatKy(`Sheet ✗ ${soPhatHanh}: ${kq.loi}`, 'err');
+            nhatKySheet.push({ 'Số phát hành': soPhatHanh, 'Thửa': dong.length, 'K': cotK, 'L': cotL, 'N': cotN, 'O': cotO, 'Dòng': 'LỖI: ' + kq.loi });
         }
 
-        datTienDo(i + 1, ketQua.length);
+        datTienDo(i + 1, nhom.length);
         await sleep(200);
     }
 
@@ -1856,6 +1833,58 @@ async function thuKetNoiSheet() {
     );
 }
 
+/** Gom kết quả theo số phát hành, giữ nguyên thứ tự gặp đầu tiên. */
+function gomTheoSoPhatHanh(danhSach) {
+    const theoSo = new Map();
+    for (const row of danhSach) {
+        const khoa = chuanHoaDeSo(row.soPhatHanh);
+        if (!theoSo.has(khoa)) theoSo.set(khoa, { soPhatHanh: row.soPhatHanh, dong: [] });
+        theoSo.get(khoa).dong.push(row);
+    }
+    return Array.from(theoSo.values());
+}
+
+/** "tờ 241 thửa 170" — nhãn nhận diện một thửa trong ghi chú gộp. */
+function nhanThua(row) {
+    const phan = [];
+    if (row.soHieuToBanDo) phan.push(`tờ ${row.soHieuToBanDo}`);
+    if (row.soThuTuThua) phan.push(`thửa ${row.soThuTuThua}`);
+    return phan.join(' ');
+}
+
+/**
+ * Gộp nội dung của mọi thửa cùng một giấy chứng nhận thành một ô sheet.
+ *
+ * Mọi thửa cùng kết quả thì ghi đúng một câu, giữ nguyên mẫu chữ cố định để
+ * copy sang bảng tổng. Các thửa khác nhau mới chua tờ/thửa vào trước từng
+ * phần — nếu không, một giấy có thửa đạt thửa chưa đạt sẽ chỉ còn lại kết quả
+ * của một thửa và người đọc không biết là thửa nào.
+ */
+function gopTheoThua(dong, dungNoiDung) {
+    const phan = dong.map((r) => ({ nhan: nhanThua(r), noiDung: dungNoiDung(r) }));
+    const khac = new Set(phan.map((p) => p.noiDung));
+
+    if (khac.size <= 1) return phan[0] ? phan[0].noiDung : '';
+
+    return phan
+        .filter((p) => p.noiDung)
+        .map((p) => (p.nhan ? `${p.nhan}: ${p.noiDung}` : p.noiDung))
+        .join(' | ');
+}
+
+/**
+ * Trạng thái gộp cho cột K (dropdown ba giá trị).
+ *
+ * Còn một thửa chưa xong thì cả giấy chưa xong — đánh "Hoàn thành" trong khi
+ * còn thửa dở là dạng sai nguy hiểm nhất ở bảng tổng, vì không ai rà lại.
+ */
+function trangThaiGopSheet(dong) {
+    const ds = dong.map((r) => TRANG_THAI_SHEET[r.trangThai] || 'Khác');
+    if (ds.includes('Chưa hoàn thành')) return 'Chưa hoàn thành';
+    if (ds.every((x) => x === 'Hoàn thành')) return 'Hoàn thành';
+    return 'Khác';
+}
+
 /**
  * Cột Trạng Thái trong sheet dùng dropdown ba lựa chọn. Ghi chuỗi ngoài danh
  * sách đó thì Google Sheets nhận nhưng đánh dấu ô là giá trị không hợp lệ.
@@ -1886,8 +1915,12 @@ const TRANG_THAI_SHEET = {
 function dungTraCuuSheet(row) {
     const phan = [row.trangThai || ''];
 
-    if (row.maLoiGop) phan.push(`lỗi ${row.maLoiGop}`);
-    if (row.moTaLoi && row.moTaLoi !== row.maLoiGop) phan.push(row.moTaLoi);
+    // Thiếu cái gì đứng ngay đầu chuỗi: đây là thứ người dùng dò mắt nhiều nhất
+    // khi mở sheet, đứng sau mã lỗi thô thì phải đọc lướt qua mới thấy.
+    const thieu = Array.from(new Set((row.maLois || []).map((m) => m.nhanMaLoi).filter(Boolean)));
+    if (thieu.length) phan.push(`Thiếu: ${thieu.join('; ')}`);
+
+    if (row.maLoiGop) phan.push(`mã lỗi ${row.maLoiGop}`);
     if (row.giayChungNhanLoi) phan.push(`GCN lỗi: ${row.giayChungNhanLoi}`);
 
     // Cùng cách đếm với ô Chữ ký trong bảng, để hai nơi không nói lệch nhau.
@@ -1908,11 +1941,56 @@ function dungTraCuuSheet(row) {
     return phan.filter(Boolean).join(' · ');
 }
 
+/**
+ * Hồ sơ có báo "chưa đồng bộ thông tin ba khối" hay không.
+ *
+ * Dữ liệu thật: "Chưa đồng bộ thông tin ba khối (không có dữ liệu không gian,
+ * không có hồ sơ quét)". Câu này xuất hiện cả ở `errorMessages` lẫn
+ * `warningMessages` tuỳ hồ sơ, nên soi cả hai. So trên chuỗi đã bỏ dấu để
+ * không vỡ khi máy chủ đổi cách viết hoa hay bỏ dấu.
+ */
+function chuaDongBoBaKhoi(row) {
+    const van = boDau(`${row.thongBaoHeThong || ''} ${row.canhBao || ''}`);
+    return van.includes('DONG BO') && (van.includes('BA KHOI') || van.includes('3 KHOI'));
+}
+
+/**
+ * Nội dung cột Ghi chú (L), bám theo trạng thái nhóm 1 của ĐÚNG thửa đó.
+ *
+ *   Đạt, còn kẹt liên kết không gian   Chưa LKKG _ đã hoàn thành các nội dung khác
+ *   Đạt, sạch                          Nhóm 1
+ *   Chưa đạt                           liệt kê đang thiếu cái gì
+ *   Không tìm thấy / lỗi tra cứu       nêu đúng lý do đó
+ *
+ * Sheet này copy sang bảng tổng của người khác nên chữ phải cố định, không
+ * thêm bớt tuỳ hồ sơ.
+ */
 function dungGhiChuSheet(row) {
-    const k = TRANG_THAI_SHEET[row.trangThai] || 'Khác';
-    if (k === 'Hoàn thành') return '';
-    if (k === 'Khác') return 'không tìm thấy gcn';
-    return 'hsq chưa kí số';
+    if (row.trangThai === TRANG_THAI.DAT) {
+        return chuaDongBoBaKhoi(row)
+            ? 'Chưa LKKG _ đã hoàn thành các nội dung khác'
+            : 'Nhóm 1';
+    }
+    if (row.trangThai === TRANG_THAI.KHONG_THAY) return 'Không tìm thấy số phát hành';
+    if (row.trangThai === TRANG_THAI.LOI) return 'Lỗi tra cứu';
+
+    // Chưa đạt: nói thẳng thiếu cái gì, lấy nhãn tiếng Việt của từng mã lỗi.
+    const thieu = (row.maLois || []).map((m) => m.nhanMaLoi).filter(Boolean);
+    const gop = Array.from(new Set(thieu)).join('; ');
+    return gop || 'Chưa đạt nhóm 1';
+}
+
+/**
+ * Cột O: tình trạng gắn giấy chứng nhận, tách riêng để copy sang bảng tổng.
+ *
+ * Chưa tick "Kiểm chữ ký số" thì chưa đọc hồ sơ quét lần nào — để trống còn
+ * hơn ghi "Không có GCN" trong khi thực ra chưa nhìn.
+ */
+function dungGanGcnSheet(row) {
+    if (row.soFileQuet === '' || row.soFileQuet === undefined) return '';
+    if (row.daChuyenGcn === 'Rồi') return 'Đã gắn GCN';
+    if (row.daChuyenGcn === 'Chưa') return 'Chưa gắn GCN';
+    return 'Không có GCN';
 }
 
 /** Đẩy một Blob xuống máy dưới tên đã chọn. */

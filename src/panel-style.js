@@ -545,6 +545,64 @@ export const PANEL_CSS = `
 #mls-panel .mls-actions-nho button { min-height: 28px; font-size: 11.5px; font-weight: 600; background: var(--mls-bg-subtle); }
 #mls-panel .mls-actions-nho button:hover:not(:disabled) { background: var(--mls-bg-hover); }
 
+/* ---------- Thanh công cụ ----------
+   Năm khối xếp dọc (mỗi khối một legend + một đoạn giải thích + vài nút) đẩy
+   bảng kết quả xuống tận đáy, phải cuộn mới thấy thứ mình vừa tra. Gom hết nút
+   vào một thanh: đọc theo hàng ngang nhanh hơn đọc năm tiêu đề, và bảng lên
+   ngay dưới ô nhập. */
+#mls-panel .mls-thanh-cong-cu {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--mls-s1);
+    margin-bottom: var(--mls-s3);
+    padding-top: var(--mls-s3);
+    border-top: 1px solid var(--mls-divider);
+}
+#mls-panel .mls-thanh-cong-cu button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 30px;
+    padding: 4px var(--mls-s2);
+    background: transparent;
+    color: var(--mls-fg);
+    border: 1px solid var(--mls-border);
+    border-radius: var(--mls-radius-sm);
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background var(--mls-t) ease, border-color var(--mls-t) ease;
+}
+#mls-panel .mls-thanh-cong-cu button svg { width: 13px; height: 13px; flex: 0 0 auto; }
+#mls-panel .mls-thanh-cong-cu button:hover:not(:disabled) {
+    background: var(--mls-bg-subtle);
+    border-color: var(--mls-border-strong);
+}
+#mls-panel .mls-thanh-cong-cu button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Nút ghi dữ liệu: chữ đỏ trên nền trắng, viền đỏ. Nền đỏ đặc cho cả ba nút
+   trong một hàng ngang thành mảng đỏ chói, át hết phần còn lại. */
+#mls-panel .mls-thanh-cong-cu button.mls-stop {
+    color: var(--mls-danger-dark);
+    border-color: var(--mls-danger);
+    background: transparent;
+}
+#mls-panel .mls-thanh-cong-cu button.mls-stop:hover:not(:disabled) {
+    background: var(--mls-err-bg);
+    border-color: var(--mls-danger-dark);
+}
+
+/* Vạch ngăn nhóm ghi dữ liệu với nhóm chỉ đọc. */
+#mls-panel .mls-thanh-ngan {
+    width: 1px;
+    height: 20px;
+    margin: 0 var(--mls-s1);
+    background: var(--mls-divider);
+}
+
 /* ---------- Tiến độ và trạng thái ---------- */
 #mls-panel .mls-progress {
     height: 6px;

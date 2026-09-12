@@ -37,13 +37,30 @@ var CAU_HINH = {
   // Cột chứa số phát hành giấy chứng nhận, dùng để tìm dòng.
   COT_SO_PHAT_HANH: 'I',
 
+  /**
+   * Cột Tờ bản đồ và Số thửa, dùng để tìm ĐÚNG dòng.
+   *
+   * Một giấy chứng nhận phủ nhiều thửa: sheet có nhiều dòng cùng số phát hành
+   * nhưng khác thửa, và mỗi thửa có trạng thái nhóm 1 riêng. Chỉ dò theo số
+   * phát hành thì kết quả của thửa này ghi đè lên mọi thửa còn lại.
+   *
+   * Điền chữ cái cột vào đây (ví dụ 'G' và 'H'). Để rỗng cả hai thì quay lại
+   * cách cũ: ghi cho mọi dòng cùng số phát hành.
+   */
+  COT_TO_BAN_DO: '',
+  COT_SO_THUA: '',
+
   // Cột sẽ được ghi.
   COT_TRANG_THAI: 'K',
   COT_GHI_CHU: 'L',
 
-  // Nhật ký tra cứu đầy đủ: trạng thái, mã lỗi, tình hình chữ ký số.
+  // Nhật ký tra cứu đầy đủ: trạng thái, thiếu thông tin gì, tình hình chữ ký số.
   // Để rỗng ('') nếu sheet của bạn không có cột này.
   COT_TRA_CUU: 'N',
+
+  // Tình trạng gắn giấy chứng nhận: Đã gắn GCN / Chưa gắn GCN / Không có GCN.
+  // Tách riêng để copy nguyên cột sang bảng tổng của người khác.
+  COT_GAN_GCN: 'O',
 
   // Dòng đầu tiên chứa dữ liệu (bỏ qua dòng tiêu đề).
   DONG_DAU: 2,
@@ -79,6 +96,12 @@ function doPost(e) {
         sheet: sh,
         ten: sh.getName(),
         giaTri: sh.getRange(CAU_HINH.DONG_DAU, soCot(CAU_HINH.COT_SO_PHAT_HANH), n, 1).getValues(),
+        to: CAU_HINH.COT_TO_BAN_DO
+          ? sh.getRange(CAU_HINH.DONG_DAU, soCot(CAU_HINH.COT_TO_BAN_DO), n, 1).getValues()
+          : null,
+        thua: CAU_HINH.COT_SO_THUA
+          ? sh.getRange(CAU_HINH.DONG_DAU, soCot(CAU_HINH.COT_SO_THUA), n, 1).getValues()
+          : null,
       });
       tongDong += n;
     }
@@ -121,8 +144,32 @@ function doPost(e) {
       });
     }
 
-    // Một giấy chứng nhận phủ nhiều thửa nên sheet có nhiều dòng cùng số phát
-    // hành. Ghi cho tất cả các dòng đó.
+    // Có cấu hình cột Tờ/Thửa thì siết lại còn đúng dòng của thửa đang ghi.
+    // KHÔNG tự lùi về ghi cả nhóm khi siết ra rỗng: ghi nhầm sang thửa khác
+    // chính là lỗi mà bước này sinh ra để chặn.
+    var locTheoThua = CAU_HINH.COT_TO_BAN_DO && CAU_HINH.COT_SO_THUA &&
+      (data.to !== undefined && data.to !== null && data.to !== '') &&
+      (data.thua !== undefined && data.thua !== null && data.thua !== '');
+
+    if (locTheoThua) {
+      var hep = [];
+      for (var q = 0; q < dongKhop.length; q++) {
+        if (chuanHoa(dongKhop[q].to) === chuanHoa(data.to) &&
+            chuanHoa(dongKhop[q].thua) === chuanHoa(data.thua)) {
+          hep.push(dongKhop[q]);
+        }
+      }
+      if (!hep.length) {
+        return traLoi({
+          ok: false,
+          error: 'Thấy ' + data.soPhatHanh + ' (' + dongKhop.length + ' dòng) nhưng không dòng nào' +
+            ' khớp tờ ' + data.to + ' thửa ' + data.thua +
+            '. Có trong sheet: ' + moTaThuaTrongSheet(dongKhop),
+        });
+      }
+      dongKhop = hep;
+    }
+
     var daGhi = [];
     for (var j = 0; j < dongKhop.length; j++) {
       var d = dongKhop[j];
@@ -133,6 +180,9 @@ function doPost(e) {
       d.sheet.getRange(d.dong, soCot(CAU_HINH.COT_GHI_CHU)).setValue(data.ghiChu || '');
       if (CAU_HINH.COT_TRA_CUU) {
         d.sheet.getRange(d.dong, soCot(CAU_HINH.COT_TRA_CUU)).setValue(data.traCuu || '');
+      }
+      if (CAU_HINH.COT_GAN_GCN) {
+        d.sheet.getRange(d.dong, soCot(CAU_HINH.COT_GAN_GCN)).setValue(data.ganGcn || '');
       }
       daGhi.push(d.ten + '!' + d.dong);
     }
@@ -165,7 +215,7 @@ function layDanhSachTab() {
   return chon;
 }
 
-/** Tìm mọi dòng khớp số phát hành, trên mọi tab. */
+/** Tìm mọi dòng khớp số phát hành, trên mọi tab. Kèm tờ/thửa của từng dòng. */
 function timDong(kho, khoa) {
   var ra = [];
   if (!khoa) return ra;
@@ -173,11 +223,26 @@ function timDong(kho, khoa) {
     var g = kho[t].giaTri;
     for (var i = 0; i < g.length; i++) {
       if (chuanHoa(g[i][0]) === khoa) {
-        ra.push({ sheet: kho[t].sheet, ten: kho[t].ten, dong: CAU_HINH.DONG_DAU + i });
+        ra.push({
+          sheet: kho[t].sheet,
+          ten: kho[t].ten,
+          dong: CAU_HINH.DONG_DAU + i,
+          to: kho[t].to ? kho[t].to[i][0] : '',
+          thua: kho[t].thua ? kho[t].thua[i][0] : '',
+        });
       }
     }
   }
   return ra;
+}
+
+/** "tờ 241 thửa 170; tờ 241 thửa 66" — để báo lỗi nói rõ sheet đang có gì. */
+function moTaThuaTrongSheet(dongKhop) {
+  var ra = [];
+  for (var i = 0; i < dongKhop.length && i < 8; i++) {
+    ra.push('tờ ' + dongKhop[i].to + ' thửa ' + dongKhop[i].thua);
+  }
+  return ra.join('; ');
 }
 
 /** Bỏ khoảng trắng và viết hoa, để `dl242877` khớp `DL 242877`. */
