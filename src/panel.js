@@ -316,85 +316,110 @@ export function taoPanel() {
         </div>
 
         <div class="mls-body mls-view-caidat" id="mls-view-caidat" hidden>
-            <p class="mls-status" id="mls-status-caidat" role="status" aria-live="polite">
-                Chỉnh xong thì bấm Quay lại.
-            </p>
-
             <div class="mls-caidat-head">
                 <button type="button" data-act="dongcaidat">${ICONS.quayLai}<span>Quay lại</span></button>
                 <h3>Cài đặt</h3>
             </div>
 
-            <fieldset class="mls-nhom">
-                <legend>Lọc file tải về</legend>
-                <div class="mls-tick">
-                    <label title="Gọi thêm một request mỗi hồ sơ để đọc danh sách file quét và cờ đã ký số">
-                        <input type="checkbox" id="mls-kiemky" checked> Kiểm chữ ký số
-                    </label>
-                    <label title="Chỉ lấy file có GCN trong tên hoặc khớp số phát hành đang tra">
-                        <input type="checkbox" id="mls-chigcn" checked> Chỉ giấy chứng nhận
-                    </label>
-                    <label title="Bỏ qua file đã có chữ ký số, vì không cần ký lại">
-                        <input type="checkbox" id="mls-chichuaky" checked> Chỉ file chưa ký
-                    </label>
-                    <label title="Hồ sơ có nhiều file cùng là giấy chứng nhận thì dừng lại hỏi">
-                        <input type="checkbox" id="mls-hoichon" checked> Hỏi khi nhiều giấy
-                    </label>
-                    <label title="Tải từng file riêng thay vì gói chung ZIP. Trình duyệt sẽ hỏi quyền tải nhiều file.">
-                        <input type="checkbox" id="mls-tairoi"> Tải rời, không ZIP
-                    </label>
-                </div>
+            <p class="mls-status" id="mls-status-caidat" role="status" aria-live="polite">
+                Chỉnh xong thì bấm Quay lại.
+            </p>
 
-                <div class="mls-field mls-field-sub">
+            <section class="mls-caidat-nhom">
+                <h4 class="mls-caidat-tieude">Tra cứu</h4>
+                <label class="mls-dong-tick">
+                    <input type="checkbox" id="mls-kiemky" checked>
+                    <span class="mls-dong-tick-ten">Kiểm chữ ký số</span>
+                    <span class="mls-dong-tick-mo">Đọc thêm hồ sơ quét mỗi lần tra, để biết file đã ký số chưa. Tắt thì tra nhanh hơn nhưng cột Chữ ký trống.</span>
+                </label>
+            </section>
+
+            <section class="mls-caidat-nhom">
+                <h4 class="mls-caidat-tieude">Tải file quét</h4>
+                <label class="mls-dong-tick">
+                    <input type="checkbox" id="mls-chigcn" checked>
+                    <span class="mls-dong-tick-ten">Chỉ giấy chứng nhận</span>
+                    <span class="mls-dong-tick-mo">Bỏ qua đơn, tờ trình, giấy tờ kèm theo. Chỉ lấy file mang tên GCN hoặc khớp số phát hành.</span>
+                </label>
+                <label class="mls-dong-tick">
+                    <input type="checkbox" id="mls-chichuaky" checked>
+                    <span class="mls-dong-tick-ten">Chỉ file chưa ký</span>
+                    <span class="mls-dong-tick-mo">File đã ký số rồi thì không tải lại.</span>
+                </label>
+                <label class="mls-dong-tick">
+                    <input type="checkbox" id="mls-hoichon" checked>
+                    <span class="mls-dong-tick-ten">Hỏi khi nhiều giấy</span>
+                    <span class="mls-dong-tick-mo">Một hồ sơ có nhiều file giấy chứng nhận thì dừng lại hỏi, không tự đoán.</span>
+                </label>
+                <label class="mls-dong-tick">
+                    <input type="checkbox" id="mls-tairoi">
+                    <span class="mls-dong-tick-ten">Tải rời, không ZIP</span>
+                    <span class="mls-dong-tick-mo">Tải từng file một. Trình duyệt sẽ hỏi quyền tải nhiều file.</span>
+                </label>
+
+                <div class="mls-dong-nhap">
                     <label for="mls-mauten">Mẫu tên file</label>
                     <input type="text" id="mls-mauten" value="${escapeHtml(MAU_TEN_MAC_DINH)}">
-                    <p class="mls-hint">
-                        Biến: <code>{soPhatHanh}</code> <code>{soPhatHanhHeThong}</code>
+                    <details class="mls-hint">
+                        <summary>Biến dùng được</summary>
+                        <code>{soPhatHanh}</code> <code>{soPhatHanhHeThong}</code>
                         <code>{tenGoc}</code> <code>{trangThaiKy}</code> <code>{giayChungNhanId}</code>
                         <code>{versionGcn}</code> <code>{toBanDo}</code> <code>{soThua}</code>
                         <code>{xaId}</code> <code>{tinhHinhDangKyId}</code>.
                         Tên trùng tự thêm hậu tố <code>_2</code>.
-                    </p>
+                    </details>
                 </div>
-            </fieldset>
+            </section>
 
-            <fieldset class="mls-nhom mls-nhom-ghi">
-                <legend>Bước "Chạy tất cả tự động" gồm những gì</legend>
-                <p class="mls-nhom-note">Nhãn <b class="mls-ghi">ghi</b> = sửa dữ liệu MPLIS.</p>
-                <div class="mls-tick mls-tick-doc">
-                    <label title="Tra cứu xong thì tự gắn giấy chứng nhận cho hồ sơ quét. Ghi lên MPLIS.">
-                        <input type="checkbox" id="mls-tugan"> Gắn giấy chứng nhận <b class="mls-ghi">ghi</b>
-                    </label>
-                    <label title="Tra cứu xong thì tải file quét luôn, khỏi bấm nút.">
-                        <input type="checkbox" id="mls-tutai"> Tải file quét
-                    </label>
-                    <label title="Tra cứu xong thì tự gửi yêu cầu phân loại lại. Ghi lên MPLIS.">
-                        <input type="checkbox" id="mls-tuphanloai"> Gửi phân loại lại <b class="mls-ghi">ghi</b>
-                    </label>
-                    <label title="Sau mỗi bước xong thì ghi kết quả vào Google Sheet">
-                        <input type="checkbox" id="mls-tughi" checked> Ghi Google Sheet
-                    </label>
-                </div>
-                <p class="mls-hint">Nút <b>Gắn giấy</b>/<b>Gửi phân loại</b> ở màn chính chạy ngay bước đó, không theo tick ở đây.</p>
-            </fieldset>
+            <section class="mls-caidat-nhom">
+                <h4 class="mls-caidat-tieude">
+                    Nút "Chạy tất cả" gồm những bước nào
+                </h4>
+                <label class="mls-dong-tick">
+                    <input type="checkbox" id="mls-tugan">
+                    <span class="mls-dong-tick-ten">Gắn giấy chứng nhận <b class="mls-ghi">ghi</b></span>
+                    <span class="mls-dong-tick-mo">Tra cứu xong thì gắn file quét vào giấy chứng nhận. Sửa dữ liệu MPLIS.</span>
+                </label>
+                <label class="mls-dong-tick">
+                    <input type="checkbox" id="mls-tutai">
+                    <span class="mls-dong-tick-ten">Tải file quét</span>
+                    <span class="mls-dong-tick-mo">Tra cứu xong thì tải file luôn, khỏi bấm nút.</span>
+                </label>
+                <label class="mls-dong-tick">
+                    <input type="checkbox" id="mls-tuphanloai">
+                    <span class="mls-dong-tick-ten">Gửi phân loại lại <b class="mls-ghi">ghi</b></span>
+                    <span class="mls-dong-tick-mo">Tra cứu xong thì gửi yêu cầu hệ thống chấm lại. Sửa dữ liệu MPLIS.</span>
+                </label>
+                <label class="mls-dong-tick">
+                    <input type="checkbox" id="mls-tughi" checked>
+                    <span class="mls-dong-tick-ten">Ghi Google Sheet</span>
+                    <span class="mls-dong-tick-mo">Sau mỗi bước xong thì ghi kết quả vào sheet.</span>
+                </label>
+                <p class="mls-hint">Nút <b>Gắn giấy</b> và <b>Phân loại</b> ở màn chính chạy ngay bước đó, không theo tick ở đây.</p>
+            </section>
 
-            <fieldset class="mls-nhom">
-                <legend>Google Sheet <span class="mls-thugon-dem ${docUrlSheet() ? 'mls-thugon-dem-ok' : ''}">${docUrlSheet() ? 'đã kết nối' : 'chưa kết nối'}</span></legend>
-                <div class="mls-field">
-                    <label for="mls-sheeturl">URL Apps Script ghi vào Google Sheet</label>
+            <section class="mls-caidat-nhom">
+                <h4 class="mls-caidat-tieude">
+                    Google Sheet
+                    <span class="mls-thugon-dem ${docUrlSheet() ? 'mls-thugon-dem-ok' : ''}">${docUrlSheet() ? 'đã kết nối' : 'chưa kết nối'}</span>
+                </h4>
+                <div class="mls-dong-nhap">
+                    <label for="mls-sheeturl">URL Apps Script</label>
                     <input type="text" id="mls-sheeturl" placeholder="để trống nếu không dùng"
                         value="${escapeHtml(docUrlSheet())}">
+                    <div class="mls-actions mls-actions-nho">
+                        <button type="button" data-act="thusheet">Thử kết nối</button>
+                    </div>
+                    <details class="mls-hint">
+                        <summary>Cách lấy URL</summary>
+                        Mở sheet, Tiện ích mở rộng, Apps Script. Dán nội dung
+                        <code>apps-script/Code.gs</code> trong repo. Triển khai dạng Ứng dụng web,
+                        quyền truy cập phải là <b>Bất kỳ ai</b>. Chép URL kết thúc bằng <code>/exec</code>.
+                        Mở URL đó bằng trình duyệt phải thấy JSON; thấy màn đăng nhập Google là quyền
+                        truy cập còn sai.
+                    </details>
                 </div>
-                <div class="mls-actions mls-actions-nho">
-                    <button type="button" data-act="thusheet">Thử kết nối</button>
-                </div>
-                <details class="mls-hint">
-                    <summary>Cách lấy URL</summary>
-                    Mở sheet, Tiện ích mở rộng, Apps Script. Dán nội dung
-                    <code>apps-script/Code.gs</code> trong repo. Triển khai dạng Ứng dụng web,
-                    quyền truy cập "Bất kỳ ai". Chép URL kết thúc bằng <code>/exec</code>.
-                </details>
-            </fieldset>
+            </section>
         </div>
     `;
     document.body.appendChild(panel);

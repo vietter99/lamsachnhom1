@@ -245,7 +245,71 @@ export const PANEL_CSS = `
 #mls-panel.mls-collapsed .mls-body { display: none; }
 
 /* ---------- Màn Cài đặt (thay hẳn màn chính, không phải phần cuộn thêm) ---------- */
-#mls-panel #mls-status-caidat { margin-bottom: var(--mls-s3); }
+#mls-panel #mls-status-caidat { margin-bottom: var(--mls-s4); }
+
+/* ---------- Màn Cài đặt: một mẫu hàng duy nhất ----------
+   Trước đây mỗi nhóm một kiểu bày: có nhóm xếp ngang, có nhóm xếp dọc, có
+   nhóm kèm ghi chú đỏ, và tên ô tick trần trụi — muốn biết nó làm gì phải rê
+   chuột đọc title. Giờ mọi thiết lập là một hàng giống nhau: ô tick, tên đậm,
+   một câu giải thích ngay dưới. Mắt quét theo cột, không phải đọc lại từ đầu
+   ở mỗi nhóm. */
+#mls-panel .mls-caidat-nhom {
+    margin: 0 0 var(--mls-s5);
+    padding-top: var(--mls-s4);
+    border-top: 1px solid var(--mls-divider);
+}
+#mls-panel .mls-caidat-nhom:first-of-type { padding-top: 0; border-top: 0; }
+#mls-panel .mls-caidat-tieude {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--mls-s2);
+    margin: 0 0 var(--mls-s3);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--mls-fg-muted);
+}
+
+#mls-panel .mls-dong-tick {
+    display: grid;
+    grid-template-columns: 16px 1fr;
+    gap: 2px var(--mls-s2);
+    margin: 0 0 var(--mls-s3);
+    cursor: pointer;
+    font-weight: 400;
+}
+#mls-panel .mls-dong-tick input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    margin: 2px 0 0;
+    accent-color: var(--mls-primary);
+    cursor: pointer;
+}
+#mls-panel .mls-dong-tick-ten {
+    grid-column: 2;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--mls-fg);
+}
+#mls-panel .mls-dong-tick-mo {
+    grid-column: 2;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--mls-fg-muted);
+}
+#mls-panel .mls-dong-tick:hover .mls-dong-tick-ten { color: var(--mls-primary); }
+
+/* Ô nhập trong Cài đặt: nhãn, ô, nút, phần thu gọn — thẳng một cột. */
+#mls-panel .mls-dong-nhap { margin-top: var(--mls-s4); }
+#mls-panel .mls-dong-nhap > label {
+    display: block;
+    margin: 0 0 var(--mls-s1);
+    font-size: 12px;
+    font-weight: 600;
+}
+#mls-panel .mls-dong-nhap .mls-hint { margin-top: var(--mls-s2); }
 #mls-panel .mls-caidat-head {
     display: flex;
     align-items: center;
